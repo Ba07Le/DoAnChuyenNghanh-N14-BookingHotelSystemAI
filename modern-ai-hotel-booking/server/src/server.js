@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import authRoutes from "./routes/auth.routes.js";
 
 import { connectDatabase } from "./config/database.js";
 
@@ -23,6 +24,8 @@ app.get("/", (req, res) => {
     status: "running",
   });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({
