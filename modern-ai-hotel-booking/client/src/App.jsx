@@ -1,22 +1,4 @@
-import { Routes, Route } from "react-router-dom";
-
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-
-      <Route path="/login" element={<Login />} />
-
-      <Route path="/register" element={<Register />} />
-
-      <Route path="/profile" element={<Profile />} />
-    </Routes>
-  );
-}
-
+import {Routes,Route} from "react-router-dom";
+import Home from "./pages/Home"; import Login from "./pages/Login"; import Register from "./pages/Register"; import Profile from "./pages/Profile"; import Hotels from "./pages/Hotels"; import Offers from "./pages/Offers"; import Destinations from "./pages/Destinations"; import HotelDetails from "./pages/HotelDetails"; import Booking from "./pages/Booking"; import Bookings from "./pages/Bookings"; import Dashboard from "./pages/Dashboard"; import Wishlist from "./pages/Wishlist"; import Notifications from "./pages/Notifications";
+function App(){return <Routes><Route path="/" element={<Home/>}/><Route path="/hotels" element={<Hotels/>}/><Route path="/hotels/:slug" element={<HotelDetails/>}/><Route path="/destinations" element={<Destinations/>}/><Route path="/offers" element={<Offers/>}/><Route path="/login" element={<Login/>}/><Route path="/register" element={<Register/>}/><Route path="/profile" element={<Profile/>}/><Route path="/bookings" element={<Bookings/>}/><Route path="/booking" element={<Booking/>}/><Route path="/dashboard" element={<Dashboard/>}/><Route path="/wishlist" element={<Wishlist/>}/><Route path="/notifications" element={<Notifications/>}/></Routes>}
 export default App;

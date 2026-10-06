@@ -1,15 +1,2 @@
-function Profile() {
-  return (
-    <div className="min-h-screen bg-slate-50 px-6 py-10">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="text-3xl font-bold text-slate-900">Hồ sơ cá nhân</h1>
-
-        <p className="mt-2 text-slate-500">
-          Trang Profile sẽ được hoàn thiện sau.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-export default Profile;
+import {useState} from "react"; import {useAuth} from "../context/AuthContext"; import {updateProfile} from "../api/profileApi"; import Navbar from "../components/Navbar"; import Footer from "../components/Footer";
+export default function Profile(){const {user,login}=useAuth();const [form,setForm]=useState({fullName:user?.fullName||"",phone:user?.phone||""});const [saved,setSaved]=useState(false);const submit=async e=>{e.preventDefault();const r=await updateProfile(form);localStorage.setItem("user",JSON.stringify(r.user));login({token:localStorage.getItem("token"),user:r.user});setSaved(true);setTimeout(()=>setSaved(false),2000)};return <div className="min-h-screen bg-slate-50"><Navbar/><main className="mx-auto max-w-3xl px-6 py-12"><div className="rounded-3xl bg-white p-8 shadow-sm"><h1 className="text-3xl font-bold">Hồ sơ cá nhân</h1><p className="mt-2 text-slate-500">Cập nhật thông tin tài khoản của bạn.</p><form onSubmit={submit} className="mt-8 space-y-5"><label className="block text-sm font-medium">Họ và tên<input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"/></label><label className="block text-sm font-medium">Email<input value={user?.email||""} disabled className="mt-2 w-full rounded-xl bg-slate-50 px-4 py-3 text-slate-500"/></label><label className="block text-sm font-medium">Số điện thoại<input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"/></label><button className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-blue-600">Lưu thay đổi</button>{saved&&<span className="ml-3 text-sm text-emerald-600">Đã lưu.</span>}</form></div></main><Footer/></div>}

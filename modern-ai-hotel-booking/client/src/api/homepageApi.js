@@ -1,0 +1,1 @@
+import api from "./apiClient"; export const getHomepageData=async()=>(await api.get("/homepage")).data;

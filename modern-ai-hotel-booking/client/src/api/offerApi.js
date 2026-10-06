@@ -1,0 +1,1 @@
+import api from "./apiClient"; export const getOffers=async()=>(await api.get("/offers")).data;

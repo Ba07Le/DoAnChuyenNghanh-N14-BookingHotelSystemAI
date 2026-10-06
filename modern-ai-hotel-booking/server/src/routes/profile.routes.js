@@ -1,0 +1,2 @@
+import express from "express"; import {authenticate} from "../middleware/auth.js"; import {updateProfile,getWishlist,toggleWishlist,getNotifications,readNotification,stats} from "../controllers/profile.controller.js";
+const r=express.Router(); r.use(authenticate); r.get("/me",(req,res)=>res.json({success:true,user:req.user})); r.put("/me",updateProfile); r.get("/wishlist",getWishlist); r.post("/wishlist/:hotelId",toggleWishlist); r.get("/notifications",getNotifications); r.patch("/notifications/:id/read",readNotification); r.get("/stats",stats); export default r;

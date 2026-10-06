@@ -1,0 +1,1 @@
+import api from "./apiClient"; export const updateProfile=async(data)=>(await api.put("/profile/me",data)).data; export const getWishlist=async()=>(await api.get("/profile/wishlist")).data; export const toggleWishlist=async(id)=>(await api.post(`/profile/wishlist/${id}`)).data; export const getNotifications=async()=>(await api.get("/profile/notifications")).data;

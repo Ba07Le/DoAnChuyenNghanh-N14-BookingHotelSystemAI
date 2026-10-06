@@ -1,0 +1,7 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Heart, MapPin } from "lucide-react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { getWishlist, toggleWishlist } from "../api/profileApi";
+export default function Wishlist(){const [items,setItems]=useState([]);const load=()=>getWishlist().then(r=>setItems(r.data||[]));useEffect(()=>{load()},[]);return <div className="min-h-screen bg-slate-50"><Navbar/><main className="mx-auto max-w-6xl px-6 py-10"><h1 className="text-3xl font-bold">Wishlist</h1><p className="mt-2 text-slate-500">Những nơi lưu trú bạn đang quan tâm.</p><div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{items.map(x=><article key={x._id} className="overflow-hidden rounded-2xl bg-white shadow-sm"><img src={x.hotelId?.images?.[0]?.url} className="h-48 w-full object-cover"/><div className="p-5"><h2 className="font-bold">{x.hotelId?.name}</h2><p className="mt-2 flex gap-1 text-sm text-slate-500"><MapPin size={15}/>{x.hotelId?.address?.city}</p><div className="mt-4 flex justify-between"><Link to={`/hotels/${x.hotelId?.slug}`} className="text-sm font-semibold text-blue-600">Xem chi tiết</Link><button onClick={()=>toggleWishlist(x.hotelId?._id).then(load)} className="text-sm text-red-500"><Heart size={17} className="fill-red-500"/></button></div></div></article>)}</div>{!items.length&&<div className="mt-10 rounded-2xl bg-white p-12 text-center text-slate-500">Wishlist đang trống.</div>}</main><Footer/></div>}

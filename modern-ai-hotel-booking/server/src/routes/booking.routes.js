@@ -1,0 +1,2 @@
+import express from "express"; import {authenticate,authorize} from "../middleware/auth.js"; import {createBooking,myBookings,getBooking,markPaid,cancelBooking,allBookings} from "../controllers/booking.controller.js";
+const r=express.Router(); r.use(authenticate); r.post("/",createBooking); r.get("/my",myBookings); r.get("/admin/all",authorize("ADMIN"),allBookings); r.get("/:id",getBooking); r.post("/:id/pay",markPaid); r.post("/:id/cancel",cancelBooking); export default r;

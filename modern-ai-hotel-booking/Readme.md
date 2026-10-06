@@ -1,43 +1,47 @@
-## 🚀 Setup Project
+# Modern AI-Powered Hotel Booking Platform
 
-Clone project về máy và cài dependencies:
+MERN hotel booking project for the capstone. The current version includes the public booking flow, MongoDB seed data, authentication, hotel search/detail, inventory-aware booking, mock payment, wishlist, notifications, offers, destinations, and a foundation for Admin/Hotel Owner CRUD + AI modules.
+
+## 1. Install
 
 ```bash
-git clone https://github.com/Ba07Le/DoAnChuyenNghanh-N14-BookingHotelSystemAI.git
-cd modern-ai-hotel-booking
-
 cd server
 npm install
-
-cd  client
+cd ../client
 npm install
 ```
 
-### Cấu hình MongoDB Atlas
+## 2. Environment
 
-Trong thư mục `server`, tạo file `.env`:
+Create `server/.env` from `.env.example`:
 
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
+MONGODB_URI=your_mongodb_atlas_uri/hotel_booking
+JWT_SECRET=your_long_secret
+CLIENT_URL=http://localhost:5173
+STRIPE_SECRET_KEY=
 ```
 
-Mỗi thành viên tự tạo `.env` và sử dụng MongoDB Atlas được cấp quyền. **Không commit `.env`, password MongoDB hoặc API keys lên GitHub.**
+Never commit `.env` or database credentials.
 
-Đảm bảo `.gitignore` có:
+## 3. Seed the database
 
-```gitignore
-node_modules/
-.env
-.env.local
-!.env.example
-dist/
-build/
-.DS_Store
-.vscode/
+The seed resets the development database and creates users, hotel types, destinations, amenities, hotels, room types, rooms, 120-day inventory, offers, demo booking/payment/review/wishlist/notifications and AI demo documents.
+
+```bash
+cd server
+npm run db:reset
+npm run db:test
 ```
 
-### Chạy Backend
+Demo accounts (all password `123456`):
+
+- `admin@123.com`
+- `owner@123.com`
+- `customer@123.com`
+
+## 4. Run
 
 Terminal 1:
 
@@ -46,47 +50,25 @@ cd server
 npm run dev
 ```
 
-Backend chạy tại:
-
-```text
-http://localhost:5000
-```
-
-### Chạy Frontend
-
-Mở terminal 2:
+Terminal 2:
 
 ```bash
 cd client
 npm run dev
 ```
 
-Frontend chạy tại:
+Frontend: `http://localhost:5173`  
+Backend: `http://localhost:5000`
 
-```text
-http://localhost:5173
-```
+## Main API groups
 
-### Quy trình Git
+- `/api/auth` — register/login/me
+- `/api/homepage` — homepage aggregation
+- `/api/hotels` — search, detail, owner/admin management
+- `/api/destinations` — destinations
+- `/api/hotel-types` — accommodation types
+- `/api/offers` — active offers
+- `/api/bookings` — booking, payment demo, cancellation
+- `/api/profile` — profile, wishlist, notifications
 
-Trước khi code:
-
-```bash
-git pull
-```
-
-Tạo branch riêng:
-
-```bash
-git checkout -b feature/ten-chuc-nang
-```
-
-Sau khi hoàn thành:
-
-```bash
-git add .
-git commit -m "feat: ten-chuc-nang"
-git push origin feature/ten-chuc-nang
-```
-
-Sau đó tạo Pull Request trên GitHub. Không push trực tiếp code chưa kiểm tra lên `main`.
+The UI/animation structure is intentionally kept close to the existing project. New work focuses on connecting real data and business logic rather than redesigning the existing pages.
