@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import "./ChatWidget.css";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import "./ChatWidget.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -13,13 +14,18 @@ const SUGGESTIONS = [
 ];
 
 export default function ChatWidget() {
+  const { token } = useAuth();
   const { pathname } = useLocation();
-if (pathname.startsWith("/admin") || pathname.startsWith("/owner")) return null;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+
+  // clear the chat when someone logs in or out, so one user never sees another's history
+  useEffect(() => {
+    setMessages([]);
+  }, [token]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,7 +43,10 @@ if (pathname.startsWith("/admin") || pathname.startsWith("/owner")) return null;
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({ messages: next.slice(-10) }),
       });
       if (!res.ok) throw new Error("bad response");
@@ -49,6 +58,9 @@ if (pathname.startsWith("/admin") || pathname.startsWith("/owner")) return null;
       setLoading(false);
     }
   };
+
+  // after ALL hooks: hide on admin/owner pages
+  if (pathname.startsWith("/admin") || pathname.startsWith("/owner")) return null;
 
   return (
     <>

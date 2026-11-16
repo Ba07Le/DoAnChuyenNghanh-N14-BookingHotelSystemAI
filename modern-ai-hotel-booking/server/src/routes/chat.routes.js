@@ -1,14 +1,32 @@
 import { Router } from "express";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 import { chat } from "../services/chatService.js";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+// Guests allowed: a valid token adds the user, anything else is treated as a guest
+const optionalAuth = async (req, _res, next) => {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(payload.userId).select("_id status").lean();
+      if (user?.status === "ACTIVE") req.user = user;
+    }
+  } catch {
+    // invalid or expired token: continue as guest
+  }
+  next();
+};
+
+router.post("/", optionalAuth, async (req, res) => {
   try {
     const history = (req.body.messages || [])
       .filter((m) => ["user", "assistant"].includes(m.role) && typeof m.content === "string")
       .slice(-10);
-    const reply = await chat(history, req.user?._id); // adjust to how your auth sets the user
+    const reply = await chat(history, req.user?._id);
     res.json({ reply });
   } catch (e) {
     console.error(e);
