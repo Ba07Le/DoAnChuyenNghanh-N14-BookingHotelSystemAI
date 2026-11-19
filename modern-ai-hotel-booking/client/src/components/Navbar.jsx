@@ -41,7 +41,7 @@ function Navbar() {
               to="/"
               className="text-2xl font-extrabold tracking-tight text-blue-600"
             >
-              HOTEL<span className="text-slate-900">AI</span>
+              See<span className="text-slate-900">YAHH!</span>
             </Link>
           </div>
 
@@ -209,7 +209,8 @@ function Navbar() {
                       </button>
 
                       {/* Dashboard */}
-                      {(user?.role === "ADMIN" || user?.role === "HOTEL_OWNER") && (
+                      {(user?.role === "ADMIN" ||
+                        user?.role === "HOTEL_OWNER") && (
                         <button
                           type="button"
                           onClick={() => {

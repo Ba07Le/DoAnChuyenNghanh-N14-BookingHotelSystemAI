@@ -21,7 +21,7 @@ function Footer() {
 
               <p className="mt-3 text-sm leading-6 text-blue-100">
                 Đăng ký nhận thông tin về khách sạn, ưu đãi và những điểm đến
-                hấp dẫn từ HOTELAI.
+                hấp dẫn từ SeeYAHH!.
               </p>
             </div>
 
@@ -197,7 +197,7 @@ function Footer() {
                 </div>
 
                 <p className="break-all text-sm leading-6 text-slate-400">
-                  support@hotelai.vn
+                  support@seeyahh.vn
                 </p>
               </div>
             </div>
@@ -208,7 +208,7 @@ function Footer() {
       {/* Bottom */}
       <div className="border-t border-slate-800">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} HOTELAI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SeeYAHH!. All rights reserved.</p>
 
           <p>Modern AI-Powered Hotel Booking Platform</p>
         </div>

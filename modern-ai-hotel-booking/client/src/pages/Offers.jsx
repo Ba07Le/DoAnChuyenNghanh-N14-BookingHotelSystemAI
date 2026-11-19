@@ -18,7 +18,7 @@ const fallbackOffers = [
   {
     _id: "demo-1",
     code: "WELCOME10",
-    description: "Giảm 10% cho khách hàng mới khi đặt phòng tại HOTELAI.",
+    description: "Giảm 10% cho khách hàng mới khi đặt phòng tại SeeYAHH!.",
     discountType: "PERCENTAGE",
     discountValue: 10,
     startDate: "2026-01-01",
@@ -112,7 +112,7 @@ export default function Offers() {
 
               <p className="mt-5 max-w-xl text-base leading-7 text-white/75 md:text-lg">
                 Khám phá những mã giảm giá và chương trình ưu đãi hấp dẫn từ
-                HOTELAI.
+                SeeYAHH!.
               </p>
             </motion.div>
           </div>
@@ -191,7 +191,7 @@ export default function Offers() {
                   <div className="p-6">
                     <p className="min-h-[48px] text-sm leading-6 text-slate-500">
                       {offer.description ||
-                        "Ưu đãi đặc biệt dành cho khách hàng HOTELAI."}
+                        "Ưu đãi đặc biệt dành cho khách hàng SeeYAHH!."}
                     </p>
 
                     <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
@@ -258,7 +258,7 @@ export default function Offers() {
 
                 <p className="mt-1 text-sm text-slate-500">
                   Các chương trình mới sẽ được cập nhật thường xuyên trên
-                  HOTELAI.
+                  SeeYAHH!.
                 </p>
               </div>
 

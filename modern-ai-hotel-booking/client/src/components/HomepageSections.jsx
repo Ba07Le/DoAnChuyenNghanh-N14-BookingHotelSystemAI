@@ -381,11 +381,11 @@ export function WhyChooseUs() {
     <section className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-10 text-center">
         <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-          HOTELAI
+          SeeYAHH! - Nền tảng đặt phòng hiện đại
         </p>
 
         <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-          Tại sao nên lựa chọn HOTELAI?
+          Tại sao nên lựa chọn SeeYAHH!
         </h2>
 
         <p className="mx-auto mt-2 max-w-2xl text-slate-500">
