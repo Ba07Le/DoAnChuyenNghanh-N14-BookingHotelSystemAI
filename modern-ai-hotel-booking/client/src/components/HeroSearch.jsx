@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -8,10 +8,42 @@ import {
   ChevronDown,
   Minus,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+// Ảnh nền theo chủ đề du lịch Việt Nam. Có thể thay URL bằng ảnh trong /public/hero/.
+const HERO_SLIDES = [
+  { name: "Đà Nẵng", description: "Biển xanh và nhịp sống miền Trung", image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Vịnh Hạ Long", description: "Kỳ quan giữa biển trời", image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Đà Lạt", description: "Sương mờ trên cao nguyên", image: "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Phú Quốc", description: "Thiên đường biển đảo", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Hội An", description: "Sắc màu phố cổ", image: "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Sa Pa", description: "Núi rừng Tây Bắc", image: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Nha Trang", description: "Nắng vàng và biển biếc", image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=2200&q=85" },
+  { name: "Ninh Bình", description: "Non nước hữu tình", image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2200&q=85" },
+];
+
+const SLIDE_INTERVAL_MS = 5500;
 
 function HeroSearch() {
   const navigate = useNavigate();
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [pauseSlides, setPauseSlides] = useState(false);
+
+  useEffect(() => {
+    if (pauseSlides) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % HERO_SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [pauseSlides]);
+
+  const changeSlide = (direction) => {
+    setActiveSlide((current) =>
+      (current + direction + HERO_SLIDES.length) % HERO_SLIDES.length
+    );
+  };
 
   const [form, setForm] = useState({
     destination: "",
@@ -62,18 +94,31 @@ function HeroSearch() {
   };
 
   return (
-    <section className="relative">
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1623048192713-ad4c69866d91?auto=format&fit=crop&w=2200&q=85')",
-        }}
-      />
+    <section
+      className="relative isolate overflow-hidden"
+      aria-label="Khám phá du lịch Việt Nam"
+      onMouseEnter={() => setPauseSlides(true)}
+      onMouseLeave={() => setPauseSlides(false)}
+      onFocusCapture={() => setPauseSlides(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setPauseSlides(false);
+      }}
+    >
+      {/* Các lớp ảnh chuyển mờ; không tác động đến form tìm kiếm */}
+      <div className="absolute inset-0 -z-20 bg-slate-200" aria-hidden="true">
+        {HERO_SLIDES.map((slide, index) => (
+          <div
+            key={slide.name}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${
+              index === activeSlide ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ backgroundImage: `url("${slide.image}")` }}
+          />
+        ))}
+      </div>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-white/10" />
+      {/* Giữ độ tương phản cho tiêu đề và các trường tìm kiếm */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-white/95 via-white/80 to-white/15" />
 
       {/* Content */}
       <div className="relative mx-auto max-w-7xl px-6 py-14 md:py-16">
@@ -265,6 +310,37 @@ function HeroSearch() {
             </button>
           </div>
         </form>
+
+        {/* Điều khiển slideshow đặt ngoài form, không thay đổi handleSearch */}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="rounded-xl bg-white/80 px-4 py-2 text-sm text-slate-800 shadow-sm backdrop-blur-sm" aria-live="off">
+            <span className="font-bold">{HERO_SLIDES[activeSlide].name}</span>
+            <span className="ml-2 hidden text-slate-600 sm:inline">{HERO_SLIDES[activeSlide].description}</span>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-full bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm" aria-label="Điều khiển ảnh nền">
+            <button type="button" onClick={() => changeSlide(-1)} aria-label="Ảnh trước" className="rounded-full p-1.5 text-slate-700 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex items-center gap-2">
+              {HERO_SLIDES.map((slide, index) => (
+                <button
+                  key={slide.name}
+                  type="button"
+                  onClick={() => setActiveSlide(index)}
+                  aria-label={`Xem ảnh ${index + 1}: ${slide.name}`}
+                  aria-current={activeSlide === index ? "true" : undefined}
+                  className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 ${
+                    activeSlide === index ? "w-6 bg-blue-600" : "w-2.5 bg-slate-400 hover:bg-slate-600"
+                  }`}
+                />
+              ))}
+            </div>
+            <button type="button" onClick={() => changeSlide(1)} aria-label="Ảnh tiếp theo" className="rounded-full p-1.5 text-slate-700 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
