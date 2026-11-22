@@ -1,3 +1,4 @@
+import Booking from "../models/Booking.js";
 import Hotel from "../models/Hotel.js"; import RoomType from "../models/RoomType.js"; import Inventory from "../models/Inventory.js";
 const safeRegex=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 export const searchHotels=async(req,res)=>{try{const {destination="",checkIn,checkOut,adults=1,children=0,rooms:roomCount=1,roomTypeId,hotelType,stars,rating,minPrice,maxPrice}=req.query; const totalGuests=Number(adults)+Number(children), roomQuantity=Number(roomCount); if(totalGuests<1||roomQuantity<1)return res.status(400).json({success:false,message:"Số khách và số phòng không hợp lệ."}); let start=null,end=null; if(checkIn||checkOut){if(!checkIn||!checkOut)return res.status(400).json({success:false,message:"Vui lòng chọn đầy đủ ngày."}); start=new Date(`${checkIn}T00:00:00`); end=new Date(`${checkOut}T00:00:00`); if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<=start)return res.status(400).json({success:false,message:"Khoảng ngày không hợp lệ."});}
@@ -7,6 +8,201 @@ if(start&&end){const dates=[];for(let d=new Date(start);d<end;d.setDate(d.getDat
 res.json({success:true,message:data.length?"Tìm kiếm thành công.":"Không tìm thấy kết quả phù hợp.",data,filters:{destination,checkIn,checkOut,adults:Number(adults),children:Number(children),rooms:roomQuantity}});}catch(e){console.error(e);res.status(500).json({success:false,message:"Không thể tìm kiếm khách sạn."});}};
 export const getHotelBySlug=async(req,res)=>{try{const hotel=await Hotel.findOne({slug:req.params.slug,status:"APPROVED"}).populate("ownerId","fullName email phone").populate("hotelTypeId","name slug description image").populate("destinationId","name slug description image region").populate("amenities","name slug icon category").lean(); if(!hotel)return res.status(404).json({success:false,message:"Không tìm thấy khách sạn."}); const roomTypes=await RoomType.find({hotelId:hotel._id,status:"ACTIVE"}).populate("amenities","name slug icon").lean(); const reviews=await (await import("../models/Review.js")).default.find({hotelId:hotel._id,status:"PUBLISHED"}).populate("userId","fullName avatar").sort({createdAt:-1}).limit(10).lean(); res.json({success:true,data:{hotel,roomTypes,reviews}});}catch(e){console.error(e);res.status(500).json({success:false,message:"Không thể tải khách sạn."});}};
 export const ownerHotels=async(req,res)=>{const filter=req.user.role==="ADMIN"?{}:{ownerId:req.user._id}; const data=await Hotel.find(filter).populate("hotelTypeId","name").populate("destinationId","name").sort({createdAt:-1}).lean();res.json({success:true,data});};
-export const createHotel=async(req,res)=>{try{const body={...req.body,ownerId:req.user._id,status:req.user.role==="ADMIN"?"APPROVED":"PENDING_APPROVAL"}; const data=await Hotel.create(body);res.status(201).json({success:true,data});}catch(e){res.status(400).json({success:false,message:e.message});}};
-export const updateHotel=async(req,res)=>{try{const filter=req.user.role==="ADMIN"?{_id:req.params.id}:{_id:req.params.id,ownerId:req.user._id}; const data=await Hotel.findOneAndUpdate(filter,{...req.body,ownerId:undefined},{new:true,runValidators:true}); if(!data)return res.status(404).json({success:false,message:"Không tìm thấy khách sạn hoặc không có quyền."});res.json({success:true,data});}catch(e){res.status(400).json({success:false,message:e.message});}};
-export const deleteHotel=async(req,res)=>{const filter=req.user.role==="ADMIN"?{_id:req.params.id}:{_id:req.params.id,ownerId:req.user._id}; const data=await Hotel.findOneAndDelete(filter); if(!data)return res.status(404).json({success:false,message:"Không tìm thấy khách sạn."});res.json({success:true,message:"Đã xóa khách sạn."});};
+
+export const createHotel = async (req, res) => {
+  try {
+    const allowedFields = [
+      "name",
+      "slug",
+      "description",
+      "hotelTypeId",
+      "destinationId",
+      "starRating",
+      "address",
+      "location",
+      "images",
+      "amenities",
+      "policies",
+      "contact",
+      "hotelType"
+    ];
+
+    const body = {};
+
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        body[field] = req.body[field];
+      }
+    }
+
+    // Gán chủ sở hữu từ tài khoản đăng nhập
+    // Gán chủ sở hữu theo tài khoản đăng nhập
+body.ownerId = req.user._id;
+
+// Admin được phê duyệt ngay, Hotel Owner phải chờ duyệt
+body.status =
+  req.user.role === "ADMIN"
+    ? "APPROVED"
+    : "PENDING_APPROVAL";
+
+    const data = await Hotel.create(body);
+
+    return res.status(201).json({
+      success: true,
+      message: "Thêm khách sạn thành công. Đang chờ phê duyệt.",
+      data
+    });
+
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+export const updateHotel = async (req, res) => {
+  try {
+    const filter = {
+      _id: req.params.id,
+      ...(req.user.role === "ADMIN"
+        ? {}
+        : { ownerId: req.user._id })
+    };
+
+    // Chỉ cho phép cập nhật thông tin quản lý khách sạn
+    const allowedFields = [
+      "name",
+      "description",
+      "hotelTypeId",
+      "destinationId",
+      "starRating",
+      "address",
+      "location",
+      "images",
+      "amenities",
+      "policies",
+      "contact",
+      "hotelType"
+    ];
+
+    const updates = {};
+
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Không có thông tin hợp lệ để cập nhật."
+      });
+    }
+
+    const data = await Hotel.findOneAndUpdate(
+      filter,
+      { $set: updates },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khách sạn hoặc không có quyền."
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Cập nhật khách sạn thành công.",
+      data
+    });
+
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * XÓA KHÁCH SẠN
+ * - Hotel Owner chỉ xóa khách sạn của mình.
+ * - Không xóa nếu đã có đơn đặt phòng.
+ * - Không xóa nếu đã có loại phòng.
+ */
+export const deleteHotel = async (req, res) => {
+  try {
+    const filter = {
+      _id: req.params.id,
+      ...(req.user.role === "ADMIN"
+        ? {}
+        : { ownerId: req.user._id })
+    };
+
+    // Kiểm tra khách sạn và quyền sở hữu
+    const hotel = await Hotel.findOne(filter);
+
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Không tìm thấy khách sạn hoặc bạn không có quyền xóa."
+      });
+    }
+
+    // Kiểm tra đơn đặt phòng liên quan
+    const hasBooking = await Booking.exists({
+      hotelId: hotel._id
+    });
+
+    if (hasBooking) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Không thể xóa khách sạn đã có đơn đặt phòng."
+      });
+    }
+
+    // Kiểm tra loại phòng liên quan
+    const hasRoomType = await RoomType.exists({
+      hotelId: hotel._id
+    });
+
+    if (hasRoomType) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Không thể xóa khách sạn đang có loại phòng. Vui lòng xử lý dữ liệu phòng trước."
+      });
+    }
+
+    // Chỉ xóa khi không có dữ liệu liên quan đã kiểm tra
+    await Hotel.deleteOne({
+      _id: hotel._id,
+      ...(req.user.role === "ADMIN"
+        ? {}
+        : { ownerId: req.user._id })
+    });
+
+    return res.json({
+      success: true,
+      message: "Xóa khách sạn thành công."
+    });
+
+  } catch (error) {
+    console.error("Delete hotel error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Không thể xóa khách sạn."
+    });
+  }
+};

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "./ChatWidget.css";
+import "./chatWidget.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 

@@ -1,3 +1,4 @@
+
 import { Route, Routes } from "react-router-dom";
 
 // Layout
@@ -25,59 +26,60 @@ import BookingLookup from "./pages/BookingLookup";
 import BookingSuccess from "./pages/BookingSuccess";
 import PaymentResult from "./pages/PaymentResult";
 
+// Trang quản lý khách sạn của Dũng
+import HotelOwner from "./pages/HotelOwner";
+
 function App() {
   return (
     <Routes>
       {/* TRANG CÔNG KHAI */}
-
       <Route path="/" element={<Home />} />
-
       <Route path="/hotels" element={<Hotels />} />
-
       <Route path="/hotels/:slug" element={<HotelDetails />} />
-
       <Route path="/destinations" element={<Destinations />} />
-
       <Route path="/offers" element={<Offers />} />
 
       {/* ĐĂNG KÝ / ĐĂNG NHẬP */}
-
       <Route path="/login" element={<Login />} />
-
-      {/* Giữ trang đăng ký của HOTELAI */}
       <Route path="/register" element={<Register />} />
 
       {/* ĐĂNG NHẬP MANAGER / STAFF */}
-
       <Route path="/manager/login" element={<ManagerLogin />} />
-
       <Route path="/staff/login" element={<ManagerLogin />} />
 
       {/* ĐẶT PHÒNG VÀ THANH TOÁN */}
-
       <Route path="/booking" element={<Booking />} />
-
-      <Route path="/booking/success" element={<BookingSuccess />} />
-
-      <Route path="/booking/lookup" element={<BookingLookup />} />
-
-      <Route path="/payment/result" element={<PaymentResult />} />
+      <Route
+        path="/booking/success"
+        element={<BookingSuccess />}
+      />
+      <Route
+        path="/booking/lookup"
+        element={<BookingLookup />}
+      />
+      <Route
+        path="/payment/result"
+        element={<PaymentResult />}
+      />
 
       {/* DASHBOARD */}
-
       <Route path="/dashboard" element={<Dashboard />} />
 
-      {/* TRANG TÀI KHOẢN */}
+      {/* QUẢN LÝ KHÁCH SẠN - HOTEL OWNER */}
+      <Route
+        path="/hotel-owner"
+        element={<HotelOwner />}
+      />
 
+      {/* TRANG TÀI KHOẢN KHÁCH HÀNG */}
       <Route element={<AccountLayout />}>
         <Route path="/profile" element={<Profile />} />
-
         <Route path="/bookings" element={<Bookings />} />
-
         <Route path="/wishlist" element={<Wishlist />} />
-
-        <Route path="/notifications" element={<Notifications />} />
-
+        <Route
+          path="/notifications"
+          element={<Notifications />}
+        />
         <Route path="/reviews" element={<MyReviews />} />
       </Route>
     </Routes>
