@@ -41,11 +41,13 @@ function ManagerLogin() {
     try {
       setLoading(true);
 
-      const data = await staffLogin({ email: form.email.trim(), password: form.password });
+      const data = await staffLogin(form.email.trim(), form.password);
 
       login(data);
     } catch (err) {
-      setError(err.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -53,38 +55,42 @@ function ManagerLogin() {
 
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-950">
-      
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-        style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1920&auto=format&fit=crop')` 
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1920&auto=format&fit=crop')`,
         }}
       />
-     
+
       <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/60 to-transparent" />
 
       <div className="absolute left-0 top-0 bottom-0 hidden lg:flex lg:w-7/12 flex-col justify-between p-12 z-10 pointer-events-none">
         <div className="flex items-center gap-3">
-          <div className="text-xl font-bold tracking-wider text-white">HOTEL MANAGER</div>
+          <div className="text-xl font-bold tracking-wider text-white">
+            HOTEL MANAGER
+          </div>
         </div>
         <div className="max-w-xl pb-6">
           <h2 className="text-4xl font-extrabold tracking-tight text-white lg:text-5xl">
             Elevate Your Hotel Experience
           </h2>
           <p className="mt-4 text-base text-slate-300">
-            Hệ thống quản trị thông minh dành riêng cho quản trị viên và chủ khách sạn. Tối ưu hóa vận hành, quản lý đặt phòng và doanh thu hiệu quả trong một nền tảng duy nhất.
+            Hệ thống quản trị thông minh dành riêng cho quản trị viên và chủ
+            khách sạn. Tối ưu hóa vận hành, quản lý đặt phòng và doanh thu hiệu
+            quả trong một nền tảng duy nhất.
           </p>
         </div>
       </div>
 
       <div className="relative z-20 flex min-h-screen w-full lg:w-4/12 ml-auto flex-col justify-center bg-white px-6 py-10 lg:px-12 xl:px-16 rounded-l-[48px] shadow-2xl">
         <div className="mx-auto w-full max-w-xs">
-          
           <div className="mb-8">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 lg:hidden">
               <ShieldCheck size={24} />
             </div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">Đăng nhập quản trị</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
+              Đăng nhập quản trị
+            </h1>
             <p className="mt-2 text-sm text-slate-500 leading-relaxed">
               Dành cho quản trị viên và chủ khách sạn HOTELAI
             </p>
@@ -98,7 +104,9 @@ function ManagerLogin() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
@@ -113,7 +121,9 @@ function ManagerLogin() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="block text-sm font-medium text-slate-700">Mật khẩu</label>
+                <label className="block text-sm font-medium text-slate-700">
+                  Mật khẩu
+                </label>
               </div>
               <div className="relative">
                 <input
@@ -148,10 +158,8 @@ function ManagerLogin() {
               </button>
             </div>
           </form>
-          
         </div>
       </div>
-
     </div>
   );
 }

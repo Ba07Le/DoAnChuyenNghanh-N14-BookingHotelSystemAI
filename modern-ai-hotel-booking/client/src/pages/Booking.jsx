@@ -74,9 +74,9 @@ function Booking() {
   const [form, setForm] = useState({
     checkIn: searchParams.get("checkIn") || "",
     checkOut: searchParams.get("checkOut") || "",
-    rooms: 1,
-    adults: 2,
-    children: 0,
+    rooms: Math.max(1, Math.min(MAX_ROOMS, Number(searchParams.get("rooms")) || 1)),
+    adults: Math.max(1, Number(searchParams.get("adults")) || 2),
+    children: Math.max(0, Number(searchParams.get("children")) || 0),
     paymentMethod: "CASH",
   });
   const [contact, setContact] = useState({

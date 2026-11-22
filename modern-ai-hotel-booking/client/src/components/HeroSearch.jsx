@@ -67,6 +67,11 @@ function HeroSearch() {
   const handleSearch = (e) => {
     e.preventDefault();
 
+    if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
+      window.alert("Ngày trả phòng phải sau ngày nhận phòng.");
+      return;
+    }
+
     setLoading(true);
 
     const params = new URLSearchParams();
@@ -184,6 +189,7 @@ function HeroSearch() {
                     setForm({
                       ...form,
                       checkIn: e.target.value,
+                      checkOut: form.checkOut && form.checkOut <= e.target.value ? "" : form.checkOut,
                     })
                   }
                   className="mt-1 w-full bg-transparent text-sm text-slate-600 outline-none"

@@ -16,7 +16,7 @@ const menuItems = [
 
 // Khung dùng chung cho các trang tài khoản: Hồ sơ, Đặt phòng, Wishlist, Thông báo
 function AccountLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, sessionChecking } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Số thông báo chưa đọc hiện ở menu; trang Thông báo cập nhật lại qua Outlet context
@@ -37,6 +37,18 @@ function AccountLayout() {
       cancelled = true;
     };
   }, [isAuthenticated]);
+
+  if (sessionChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <main className="mx-auto max-w-6xl px-6 py-20 text-center text-slate-500">
+          Đang kiểm tra phiên đăng nhập...
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

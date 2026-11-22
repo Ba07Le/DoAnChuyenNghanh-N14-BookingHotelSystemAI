@@ -2,7 +2,7 @@ import { Heart, MapPin, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { getWishlist } from "../api/profileApi";
+import { getWishlist } from "../api/wishlistApi";
 import { useWishlist } from "../context/WishlistContext";
 
 // Chuẩn hóa dữ liệu từ API cũ và API mới

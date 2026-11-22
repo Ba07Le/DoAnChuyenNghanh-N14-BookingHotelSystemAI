@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { toggleWishlist } from "../../api/profileApi";
 import { Bath, Heart, MapPin, Star, Waves, Wifi, Wind } from "lucide-react";
 
-function HotelCard({ hotel }) {
+function HotelCard({ hotel, searchParams = "" }) {
   const [liked, setLiked] = useState(false);
 
   const formatPrice = (price) => {
@@ -178,7 +178,7 @@ function HotelCard({ hotel }) {
 
             {/* CTA */}
             <Link
-              to={`/hotels/${hotel.slug}`}
+              to={`/hotels/${hotel.slug}${searchParams ? `?${searchParams}` : ""}`}
               className="
                 rounded-xl
                 bg-slate-900

@@ -1,10 +1,13 @@
-
 import { Route, Routes } from "react-router-dom";
 
-// Layout
+// ===============================
+// LAYOUT
+// ===============================
 import AccountLayout from "./layouts/AccountLayout";
 
-// Các trang HOTELAI hiện tại
+// ===============================
+// CÁC TRANG HOTELAI
+// ===============================
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -19,68 +22,119 @@ import Dashboard from "./pages/Dashboard";
 import Wishlist from "./pages/Wishlist";
 import Notifications from "./pages/Notifications";
 
-// Các trang bổ sung từ Hiếu
+// ===============================
+// CHỨC NĂNG BỔ SUNG TỪ HIẾU
+// ===============================
 import ManagerLogin from "./pages/ManagerLogin";
 import MyReviews from "./pages/MyReviews";
 import BookingLookup from "./pages/BookingLookup";
 import BookingSuccess from "./pages/BookingSuccess";
 import PaymentResult from "./pages/PaymentResult";
 
-// Trang quản lý khách sạn của Dũng
+// ===============================
+// HOTEL OWNER - DŨNG
+// ===============================
 import HotelOwner from "./pages/HotelOwner";
+
+// ===============================
+// ADMIN - TUẤN ANH
+// ===============================
+import AdminRoute from "./components/admin/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
+
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminHotels from "./pages/admin/AdminHotels";
+import AdminBookings from "./pages/admin/AdminBookings";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 
 function App() {
   return (
     <Routes>
-      {/* TRANG CÔNG KHAI */}
+      {/* ===========================
+          TRANG CÔNG KHAI
+      =========================== */}
       <Route path="/" element={<Home />} />
       <Route path="/hotels" element={<Hotels />} />
       <Route path="/hotels/:slug" element={<HotelDetails />} />
       <Route path="/destinations" element={<Destinations />} />
       <Route path="/offers" element={<Offers />} />
 
-      {/* ĐĂNG KÝ / ĐĂNG NHẬP */}
+      {/* ===========================
+          ĐĂNG KÝ / ĐĂNG NHẬP
+      =========================== */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* ĐĂNG NHẬP MANAGER / STAFF */}
+      {/* Manager / Staff */}
       <Route path="/manager/login" element={<ManagerLogin />} />
       <Route path="/staff/login" element={<ManagerLogin />} />
 
-      {/* ĐẶT PHÒNG VÀ THANH TOÁN */}
+      {/* ===========================
+          ĐẶT PHÒNG VÀ THANH TOÁN
+      =========================== */}
       <Route path="/booking" element={<Booking />} />
-      <Route
-        path="/booking/success"
-        element={<BookingSuccess />}
-      />
-      <Route
-        path="/booking/lookup"
-        element={<BookingLookup />}
-      />
-      <Route
-        path="/payment/result"
-        element={<PaymentResult />}
-      />
 
-      {/* DASHBOARD */}
+      <Route path="/booking/success" element={<BookingSuccess />} />
+
+      <Route path="/booking/lookup" element={<BookingLookup />} />
+
+      <Route path="/payment/result" element={<PaymentResult />} />
+
+      {/* ===========================
+          DASHBOARD HIỆN TẠI
+      =========================== */}
       <Route path="/dashboard" element={<Dashboard />} />
 
-      {/* QUẢN LÝ KHÁCH SẠN - HOTEL OWNER */}
-      <Route
-        path="/hotel-owner"
-        element={<HotelOwner />}
-      />
+      {/* ===========================
+          HOTEL OWNER - DŨNG
+      =========================== */}
+      <Route path="/hotel-owner" element={<HotelOwner />} />
 
-      {/* TRANG TÀI KHOẢN KHÁCH HÀNG */}
+      {/* ===========================
+          TÀI KHOẢN KHÁCH HÀNG
+      =========================== */}
       <Route element={<AccountLayout />}>
         <Route path="/profile" element={<Profile />} />
+
         <Route path="/bookings" element={<Bookings />} />
+
         <Route path="/wishlist" element={<Wishlist />} />
-        <Route
-          path="/notifications"
-          element={<Notifications />}
-        />
+
+        <Route path="/notifications" element={<Notifications />} />
+
         <Route path="/reviews" element={<MyReviews />} />
+      </Route>
+
+      {/* ===========================
+          ADMIN - TUẤN ANH
+      =========================== */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        {/* Dashboard Admin */}
+        <Route index element={<AdminDashboard />} />
+
+        {/* Quản lý người dùng */}
+        <Route path="users" element={<AdminUsers />} />
+
+        {/* Quản lý khách sạn */}
+        <Route path="hotels" element={<AdminHotels />} />
+
+        {/* Quản lý đặt phòng */}
+        <Route path="bookings" element={<AdminBookings />} />
+
+        {/* Quản lý mã giảm giá */}
+        <Route path="coupons" element={<AdminCoupons />} />
+
+        {/* Nhật ký hoạt động */}
+        <Route path="audit-logs" element={<AdminAuditLogs />} />
       </Route>
     </Routes>
   );
