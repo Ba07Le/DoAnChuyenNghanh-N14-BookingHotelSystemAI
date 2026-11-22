@@ -1,2 +1,72 @@
-import express from "express"; import {register,login,me} from "../controllers/auth.controller.js"; import {authenticate} from "../middleware/auth.js";
-const router=express.Router(); router.post("/register",register); router.post("/login",login); router.get("/me",authenticate,me); export default router;
+import express from "express";
+
+import {
+  register,
+  login,
+  me,
+  requestOtp,
+  verifyOtp,
+  staffLogin,
+  googleLogin,
+  facebookLogin,
+} from "../controllers/auth.controller.js";
+
+import { authenticate } from "../middleware/auth.js";
+
+import {
+  authLimiter,
+  otpRequestLimiter,
+  staffLoginLimiter,
+} from "../middleware/rateLimiter.js";
+
+import { validate } from "../middleware/validate.js";
+
+import {
+  facebookSchema,
+  googleSchema,
+  otpRequestSchema,
+  otpVerifySchema,
+  staffLoginSchema,
+} from "../utils/authValidators.js";
+
+const router = express.Router();
+
+// Đăng ký và đăng nhập bằng mật khẩu hiện tại
+router.post("/register", authLimiter, register);
+router.post("/login", authLimiter, login);
+
+// Đăng nhập bằng Email OTP
+router.post(
+  "/otp/request",
+  otpRequestLimiter,
+  validate(otpRequestSchema),
+  requestOtp,
+);
+
+router.post("/otp/verify", authLimiter, validate(otpVerifySchema), verifyOtp);
+
+// Đăng nhập dành cho nhân viên và quản lý
+router.post(
+  "/staff/login",
+  staffLoginLimiter,
+  validate(staffLoginSchema),
+  staffLogin,
+);
+
+router.post(
+  "/manager/login",
+  staffLoginLimiter,
+  validate(staffLoginSchema),
+  staffLogin,
+);
+
+// Đăng nhập bằng Google
+router.post("/google", authLimiter, validate(googleSchema), googleLogin);
+
+// Đăng nhập bằng Facebook
+router.post("/facebook", authLimiter, validate(facebookSchema), facebookLogin);
+
+// Lấy thông tin người dùng hiện tại
+router.get("/me", authenticate, me);
+
+export default router;
