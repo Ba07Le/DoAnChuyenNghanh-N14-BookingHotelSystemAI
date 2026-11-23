@@ -162,7 +162,7 @@ export default function Destinations() {
 
               <p className="mt-5 max-w-2xl text-base leading-7 text-white/75 md:text-lg">
                 Tìm cảm hứng cho chuyến đi tiếp theo và khám phá những nơi lưu
-                trú tuyệt vời cùng HOTELAI.
+                trú tuyệt vời cùng SeeYAHH!.
               </p>
 
               {/* SEARCH */}
@@ -335,8 +335,8 @@ export default function Destinations() {
 
                 <p className="mt-4 max-w-xl leading-7 text-slate-500">
                   Từ những thành phố biển đầy nắng đến những vùng núi yên bình,
-                  HOTELAI giúp bạn dễ dàng tìm nơi lưu trú phù hợp cho từng hành
-                  trình.
+                  SeeYAHH! giúp bạn dễ dàng tìm nơi lưu trú phù hợp cho từng
+                  hành trình.
                 </p>
 
                 <div className="mt-7 grid grid-cols-2 gap-4">

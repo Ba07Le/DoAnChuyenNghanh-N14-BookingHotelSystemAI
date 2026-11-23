@@ -14,14 +14,15 @@ const hotelSchema = new mongoose.Schema({
   policies: { checkInTime: { type: String, default: "14:00" }, checkOutTime: { type: String, default: "12:00" }, cancellationPolicy: String, childPolicy: String, petPolicy: String },
   contact: { phone: String, email: String, website: String },
   status: { type: String, enum: ["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"], default: "DRAFT", index: true },
-  // [ADMIN] 3 field mới phục vụ duyệt khách sạn
+  // [ADMIN] 3 field phục vụ duyệt khách sạn
   rejectReason: { type: String, default: "" },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   reviewedAt: Date,
   isFeatured: { type: Boolean, default: false, index: true },
   hotelType: { type: String, enum: ["HOTEL", "RESORT", "VILLA", "APARTMENT", "HOMESTAY", "BOUTIQUE"], default: "HOTEL", index: true },
   averageRating: { type: Number, default: 0, min: 0, max: 5 },
-  reviewCount: { type: Number, default: 0 }
+  reviewCount: { type: Number, default: 0 },
+  embedding: { type: [Number], select: false }
 }, { timestamps: true, collection: "hotels" });
 hotelSchema.index({ location: "2dsphere" });
 hotelSchema.index({ "address.city": 1, status: 1 });

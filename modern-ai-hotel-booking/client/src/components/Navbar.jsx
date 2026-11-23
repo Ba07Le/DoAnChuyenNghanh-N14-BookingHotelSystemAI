@@ -41,7 +41,7 @@ function Navbar() {
               to="/"
               className="text-2xl font-extrabold tracking-tight text-blue-600"
             >
-              HOTEL<span className="text-slate-900">AI</span>
+              See<span className="text-slate-900">YAHH!</span>
             </Link>
           </div>
 
@@ -209,17 +209,18 @@ function Navbar() {
                       </button>
 
                       {/* Dashboard */}
-                      {(user?.role === "ADMIN" || user?.role === "HOTEL_OWNER") && (
+                      {(user?.role === "ADMIN" ||
+                        user?.role === "HOTEL_OWNER") && (
                         <button
                           type="button"
                           onClick={() => {
                             setOpenProfile(false);
-                            navigate("/dashboard");
+                            navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard"); // [ADMIN] admin vào trang quản trị riêng
                           }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
                         >
                           <Building2 size={18} />
-                          Dashboard
+                          {user?.role === "ADMIN" ? "Quản trị" : "Dashboard"}
                         </button>
                       )}
 
