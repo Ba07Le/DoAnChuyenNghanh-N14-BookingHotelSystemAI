@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // ===============================
 // WISHLIST CONTEXT
@@ -16,7 +16,6 @@ import Destinations from "./pages/Destinations";
 import HotelDetails from "./pages/HotelDetails";
 import Booking from "./pages/Booking";
 import Bookings from "./pages/Bookings";
-import Dashboard from "./pages/Dashboard";
 import Wishlist from "./pages/Wishlist";
 import Notifications from "./pages/Notifications";
 
@@ -61,7 +60,7 @@ function App() {
 
       {/* CUSTOMER */}
       <Route path="/profile" element={<Profile />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+
       <Route path="/wishlist" element={<Wishlist />} />
       <Route path="/notifications" element={<Notifications />} />
 
@@ -81,6 +80,7 @@ function App() {
       <Route path="/reviews/mine" element={<MyReviews />} />
 
       {/* ADMIN */}
+      <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
       <Route
         path="/admin"
         element={

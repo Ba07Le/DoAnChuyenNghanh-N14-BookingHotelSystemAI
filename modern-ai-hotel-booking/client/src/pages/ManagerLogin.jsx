@@ -21,9 +21,15 @@ function ManagerLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Đăng nhập thành công (hoặc đã đăng nhập bằng tài khoản quản trị/chủ khách sạn) thì vào thẳng Dashboard
+  // Admin đăng nhập thành công sẽ vào trang quản trị
   if (isAuthenticated && MANAGER_ROLES.includes(user?.role)) {
-    return <Navigate to="/dashboard" replace />;
+    if (user?.role === "ADMIN") {
+      return <Navigate to="/admin" replace />;
+    }
+
+    if (user?.role === "HOTEL_OWNER") {
+      return <Navigate to="/hotel-owner" replace />;
+    }
   }
 
   const handleChange = (e) => {

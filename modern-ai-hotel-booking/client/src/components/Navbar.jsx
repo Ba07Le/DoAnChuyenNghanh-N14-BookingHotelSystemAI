@@ -7,7 +7,6 @@ import {
   Heart,
   Bell,
   CalendarDays,
-  Settings,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -214,9 +213,7 @@ function Navbar() {
                           type="button"
                           onClick={() => {
                             setOpenProfile(false);
-                            navigate(
-                              user?.role === "ADMIN" ? "/admin" : "/dashboard",
-                            ); // [ADMIN] admin vào trang quản trị riêng
+                            navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard"); // [ADMIN] admin vào trang quản trị riêng
                           }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
                         >
@@ -225,18 +222,6 @@ function Navbar() {
                         </button>
                       )}
 
-                      {/* Settings */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpenProfile(false);
-                          navigate("/settings");
-                        }}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        <Settings size={18} />
-                        Cài đặt
-                      </button>
                     </div>
 
                     {/* Logout */}

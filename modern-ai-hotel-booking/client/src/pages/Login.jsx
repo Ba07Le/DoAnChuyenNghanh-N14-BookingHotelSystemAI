@@ -25,7 +25,10 @@ function Login() {
 
   // Đăng nhập bằng OTP
   const [otpStep, setOtpStep] = useState("email");
-  const [otpEmail, setOtpEmail] = useState("");
+  const [otpEmail, setOtpEmail] = useState(() => {
+    const value = new URLSearchParams(location.search).get("email")?.trim() || "";
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : "";
+  });
   const [code, setCode] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
 
@@ -35,6 +38,16 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const redirectTimer = useRef(null);
+
+  // Keep the form in sync if a different email arrives through the footer link.
+  useEffect(() => {
+    const value = new URLSearchParams(location.search).get("email")?.trim() || "";
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setOtpEmail(value);
+      setOtpStep("email");
+      setCode("");
+    }
+  }, [location.search]);
 
   // Đếm ngược thời gian OTP
   useEffect(() => {

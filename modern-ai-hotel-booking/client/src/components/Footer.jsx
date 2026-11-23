@@ -1,37 +1,46 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Footer() {
-  const handleSubscribe = (e) => {
-    e.preventDefault();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
 
-    // Sau này có thể kết nối API đăng ký nhận email tại đây.
+  const handleLogin = (event) => {
+    event.preventDefault();
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) return;
+    navigate(`/login?email=${encodeURIComponent(normalizedEmail)}`);
   };
 
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
-      {/* Newsletter */}
-      <div className="border-b border-slate-800">
+      {/* Quick login for visitors only; no newsletter subscription API. */}
+      {!isAuthenticated && <div className="border-b border-slate-800">
         <div className="mx-auto max-w-7xl px-6 py-12">
           <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-600 px-6 py-8 md:flex-row md:items-center md:px-10">
             {/* Content */}
             <div className="max-w-xl">
               <h2 className="text-2xl font-bold text-white md:text-3xl">
-                Nhận ưu đãi du lịch mới nhất
+                Đăng nhập để khám phá ưu đãi
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-blue-100">
-                Đăng ký nhận thông tin về khách sạn, ưu đãi và những điểm đến
-                hấp dẫn từ SeeYAHH!.
+                Nhập email để tiếp tục đăng nhập và nhận mã OTP xác thực từ SeeYAHH!.
               </p>
             </div>
 
             {/* Form */}
             <form
-              onSubmit={handleSubscribe}
+              onSubmit={handleLogin}
               className="flex w-full max-w-md gap-2"
             >
               <input
                 type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
                 placeholder="Email của bạn"
                 required
                 className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20"
@@ -41,12 +50,12 @@ function Footer() {
                 type="submit"
                 className="shrink-0 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-900 hover:shadow-lg"
               >
-                Đăng ký
+                Đăng nhập
               </button>
             </form>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Main Footer */}
       <div className="mx-auto max-w-7xl px-6 py-14">
@@ -116,7 +125,7 @@ function Footer() {
               </Link>
 
               <Link
-                to="/deals"
+                to="/offers"
                 className="block text-sm text-slate-400 transition-colors duration-200 hover:text-white"
               >
                 Ưu đãi

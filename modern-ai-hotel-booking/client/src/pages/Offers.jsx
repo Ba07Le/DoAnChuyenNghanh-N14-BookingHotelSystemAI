@@ -14,43 +14,28 @@ import { getOffers } from "../api/offerApi";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const fallbackOffers = [
-  {
-    _id: "demo-1",
-    code: "WELCOME10",
-    description: "Giảm 10% cho khách hàng mới khi đặt phòng tại SeeYAHH!.",
-    discountType: "PERCENTAGE",
-    discountValue: 10,
-    startDate: "2026-01-01",
-    endDate: "2026-12-31",
-  },
-  {
-    _id: "demo-2",
-    code: "SUMMER20",
-    description: "Ưu đãi đặc biệt cho những chuyến du lịch và nghỉ dưỡng.",
-    discountType: "PERCENTAGE",
-    discountValue: 20,
-    startDate: "2026-06-01",
-    endDate: "2026-10-31",
-  },
-];
-
 export default function Offers() {
   const [offers, setOffers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     const fetchOffers = async () => {
       try {
         const data = await getOffers();
 
-        setOffers(Array.isArray(data) ? data : data?.offers || []);
+        // /api/offers returns { success: true, data: Coupon[] }.
+        const items = Array.isArray(data) ? data : data?.data;
+        if (!Array.isArray(items)) throw new Error("Dữ liệu ưu đãi không đúng định dạng.");
+        setOffers(items);
+        setLoadError("");
       } catch (error) {
         console.error("Không thể tải ưu đãi:", error);
 
-        // Tạm dùng dữ liệu mẫu nếu API chưa hoàn thiện
-        setOffers(fallbackOffers);
+        // Never show fictitious coupons when the database API fails.
+        setOffers([]);
+        setLoadError("Không tải được mã ưu đãi. Vui lòng kiểm tra kết nối và thử lại.");
       } finally {
         setIsLoading(false);
       }
@@ -143,11 +128,16 @@ export default function Offers() {
                 />
               ))}
             </div>
+          ) : loadError ? (
+            <div role="alert" className="rounded-2xl border border-red-200 bg-white p-8 text-center text-red-600">
+              {loadError}
+              <button type="button" onClick={() => window.location.reload()} className="ml-3 font-semibold underline">Thử lại</button>
+            </div>
           ) : offers.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {offers.map((offer, index) => (
                 <motion.div
-                  key={offer._id}
+                  key={offer._id || offer.code}
                   initial={{ opacity: 0, y: 25 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -195,6 +185,12 @@ export default function Offers() {
                     </p>
 
                     <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+                      {Number(offer.minBookingAmount) > 0 && (
+                        <p className="text-sm text-slate-500">Đơn từ {Number(offer.minBookingAmount).toLocaleString("vi-VN")}₫</p>
+                      )}
+                      {Number(offer.usageLimit) > 0 && (
+                        <p className="text-sm text-slate-500">Còn {Math.max(0, offer.usageLimit - (offer.usedCount || 0))} lượt sử dụng</p>
+                      )}
                       <div className="flex items-center gap-3 text-sm text-slate-500">
                         <CalendarDays size={17} className="text-blue-600" />
 
