@@ -8,5 +8,5 @@ export async function embed(text) {
     model: "text-embedding-3-small",
     input: text.slice(0, 8000),
   });
-  return res.data[0].embedding;
+  return res.data[0].embedding; // 1536 numbers
 }

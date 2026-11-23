@@ -23,6 +23,7 @@
 .chat-msg p { margin: 0 0 6px; }
 .chat-msg p:last-child { margin-bottom: 0; }
 .chat-msg ul, .chat-msg ol { margin: 4px 0; padding-left: 18px; }
+.chat-msg a { color: #2563eb; font-weight: 600; text-decoration: underline; }
 .chat-suggestions { display: flex; flex-direction: column; gap: 6px; }
 .chat-suggestions button {
   text-align: left; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 10px;

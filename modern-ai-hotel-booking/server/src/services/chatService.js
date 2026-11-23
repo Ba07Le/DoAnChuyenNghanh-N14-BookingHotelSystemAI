@@ -5,9 +5,12 @@ import Destination from "../models/Destination.js";
 import Coupon from "../models/Coupon.js";
 import User from "../models/User.js";
 import Wishlist from "../models/Wishlist.js";
-import "../models/Amenity.js";
 import Booking from "../models/Booking.js";
+import "../models/Amenity.js"; // registers the model for populate("amenities")
 
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// ---------- date helpers (Vietnam time, UTC+7) ----------
 const VN_OFFSET = 7 * 3600 * 1000;
 const DAY = 864e5;
 const dayKey = (d) => new Date(new Date(d).getTime() + VN_OFFSET).toISOString().slice(0, 10);
@@ -18,6 +21,7 @@ function nightsBetween(ci, co) {
   return out;
 }
 
+// ---------- lookup helpers ----------
 async function approvedHotelIdsByCity(city) {
   const rx = new RegExp(esc(city), "i");
   const dests = await Destination.find({ status: "ACTIVE", $or: [{ name: rx }, { slug: rx }] }).select("_id").lean();
@@ -27,20 +31,21 @@ async function approvedHotelIdsByCity(city) {
   });
 }
 
-const systemPrompt = (loggedIn) => `Bạn là trợ lý đặt phòng khách sạn. Trả lời bằng ngôn ngữ của người dùng (Việt hoặc Anh).
-Hôm nay là ${dayKey(new Date())} (giờ Việt Nam).
-- Luôn dùng công cụ để lấy dữ liệu thật. Không bịa khách sạn, giá, phòng hay mã giảm giá.
-- Với yêu cầu mơ hồ (yên tĩnh, lãng mạn, gần biển...) dùng semantic_search_hotels. Với bộ lọc rõ ràng (thành phố, giá, số khách) dùng search_hotels / find_rooms.
-- Khi khách hỏi phòng theo ngày, dùng check_availability với ngày dạng YYYY-MM-DD. Thiếu ngày nhận/trả phòng thì hỏi lại. Khách không nói năm thì dùng năm gần nhất trong tương lai.
-- Giá là VND/đêm (giá cơ bản). Tổng tiền = giá × số đêm × số phòng, chưa áp mã giảm giá.
-- Tên thành phố nên viết tiếng Việt có dấu (vd: Đà Nẵng).
-- Gợi ý 2-4 lựa chọn, mỗi lựa chọn kèm lý do ngắn.
-${loggedIn
-  ? "- Người dùng ĐÃ đăng nhập: khi gợi ý khách sạn, gọi get_user_profile để dùng ngân sách, điểm đến yêu thích, loại phòng ưa thích và wishlist (ngân sách 0 nghĩa là chưa đặt). Khi họ hỏi về đơn đặt phòng của mình, dùng get_my_bookings."
-  : "- Người dùng CHƯA đăng nhập: không có dữ liệu cá nhân. Nếu họ hỏi về đơn đặt phòng hoặc wishlist, nhắc họ đăng nhập."}
-- Nếu thiếu thông tin quan trọng, hỏi một câu ngắn.`;
+async function resolveHotelId(hotelId, hotelName) {
+  if (hotelId) return hotelId;
+  if (!hotelName) return null;
+  const h = await Hotel.findOne({ status: "APPROVED", name: new RegExp(esc(hotelName), "i") }).select("_id").lean();
+  return h?._id ?? null;
+}
 
-const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Relative link to the existing booking page (the page itself re-checks price and availability)
+const bookingLink = ({ hotelId, roomTypeId, checkIn, checkOut, rooms, adults, children }) => {
+  const p = new URLSearchParams({ hotelId: String(hotelId), roomTypeId: String(roomTypeId) });
+  for (const [k, v] of Object.entries({ checkIn, checkOut, rooms, adults, children })) {
+    if (v) p.set(k, String(v));
+  }
+  return `/booking?${p}`;
+};
 
 async function fromPrices(ids) {
   const rows = await RoomType.aggregate([
@@ -63,6 +68,26 @@ const shape = (h, prices) => ({
   ...(h.score !== undefined && { score: Number(h.score.toFixed(3)) }),
 });
 
+// ---------- system prompt ----------
+const systemPrompt = (loggedIn) => `Bạn là trợ lý đặt phòng khách sạn. Trả lời bằng ngôn ngữ của người dùng (Việt hoặc Anh).
+Hôm nay là ${dayKey(new Date())} (giờ Việt Nam).
+- Luôn dùng công cụ để lấy dữ liệu thật. Không bịa khách sạn, giá, phòng hay mã giảm giá.
+- Với yêu cầu mơ hồ (yên tĩnh, lãng mạn, gần biển...) dùng semantic_search_hotels. Với bộ lọc rõ ràng (thành phố, giá, số khách) dùng search_hotels / find_rooms.
+- Khi khách hỏi phòng theo ngày, dùng check_availability với ngày dạng YYYY-MM-DD. Thiếu ngày nhận/trả phòng thì hỏi lại. Khách không nói năm thì dùng năm gần nhất trong tương lai.
+- Giá là VND/đêm (giá cơ bản). Tổng tiền = giá × số đêm × số phòng, chưa áp mã giảm giá.
+- Tên thành phố nên viết tiếng Việt có dấu (vd: Đà Nẵng).
+- Bạn CHỈ ĐỌC dữ liệu, KHÔNG thể đặt phòng, hủy phòng hay thanh toán. Khi khách chọn phòng muốn đặt, tóm tắt (khách sạn, loại phòng, ngày, số khách, tổng tiền) rồi đưa link markdown [Đặt phòng này](bookLink), dùng ĐÚNG giá trị bookLink từ công cụ, không tự tạo link. Không bao giờ nói "tôi đặt giúp bạn".
+- Mỗi câu trả lời về phòng phải ghi rõ tên khách sạn, ngày nhận/trả phòng và số khách, để câu hỏi tiếp theo không mất ngữ cảnh. Khi khách chọn một lựa chọn trong câu trả lời trước (ví dụ "Phòng Family Suite"), dùng lại khách sạn và ngày đó, không tìm lại từ đầu.
+- Nếu công cụ không tìm thấy khách sạn, thử lại bằng hotelName hoặc city trước khi kết luận là không có.
+- Gợi ý 2-4 lựa chọn, mỗi lựa chọn kèm lý do ngắn.
+${
+  loggedIn
+    ? "- Người dùng ĐÃ đăng nhập: khi gợi ý khách sạn, gọi get_user_profile để dùng ngân sách, điểm đến yêu thích, loại phòng ưa thích và wishlist (ngân sách 0 nghĩa là chưa đặt). Khi họ hỏi về đơn đặt phòng của mình, dùng get_my_bookings."
+    : "- Người dùng CHƯA đăng nhập: không có dữ liệu cá nhân. Nếu họ hỏi về đơn đặt phòng hoặc wishlist, nhắc họ đăng nhập."
+}
+- Nếu thiếu thông tin quan trọng, hỏi một câu ngắn.`;
+
+// ---------- tool handlers ----------
 const handlers = {
   async semantic_search_hotels({ query, minStars, hotelType, limit = 4 }) {
     const filter = { status: "APPROVED" };
@@ -128,9 +153,11 @@ const handlers = {
     return hotels.map((h) => shape(h, prices));
   },
 
-  async find_rooms({ hotelId, maxPrice, adults, children = 0, limit = 8 }) {
+  async find_rooms({ hotelId, hotelName, maxPrice, adults, children = 0, limit = 8 }) {
     const q = { status: "ACTIVE" };
-    if (hotelId) q.hotelId = hotelId;
+    const hid = await resolveHotelId(hotelId, hotelName);
+    if (hotelName && !hid) return { error: `Không tìm thấy khách sạn "${hotelName}"` };
+    if (hid) q.hotelId = hid;
     if (maxPrice) q.basePrice = { $lte: maxPrice };
     if (adults) {
       q["capacity.adults"] = { $gte: adults };
@@ -153,9 +180,11 @@ const handlers = {
         pricePerNight: r.basePrice,
         capacity: r.capacity,
         hotel: { id: String(r.hotelId._id), name: r.hotelId.name, stars: r.hotelId.starRating, city: r.hotelId.address?.city },
+        bookLink: bookingLink({ hotelId: r.hotelId._id, roomTypeId: r._id, adults, children }),
       }));
   },
-    async check_availability({ checkIn, checkOut, adults = 1, children = 0, rooms = 1, hotelId, city, maxPrice, limit = 6 }) {
+
+  async check_availability({ checkIn, checkOut, adults = 1, children = 0, rooms = 1, hotelId, hotelName, city, maxPrice, limit = 6 }) {
     const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
     if (!dateOk(checkIn) || !dateOk(checkOut)) return { error: "Ngày không hợp lệ, cần dạng YYYY-MM-DD" };
     const nights = nightsBetween(checkIn, checkOut);
@@ -164,7 +193,9 @@ const handlers = {
     if (checkIn < dayKey(new Date())) return { error: "Ngày nhận phòng đã qua" };
 
     const rq = { status: "ACTIVE", "capacity.total": { $gte: Math.ceil((adults + children) / rooms) } };
-    if (hotelId) rq.hotelId = hotelId;
+    const hid = await resolveHotelId(hotelId, hotelName);
+    if (hotelName && !hid) return { error: `Không tìm thấy khách sạn "${hotelName}"` };
+    if (hid) rq.hotelId = hid;
     else if (city) rq.hotelId = { $in: await approvedHotelIdsByCity(city) };
     if (maxPrice) rq.basePrice = { $lte: maxPrice };
 
@@ -204,6 +235,7 @@ const handlers = {
           totalPrice: t.basePrice * nights.length * rooms,
           roomsLeft: t.totalRooms - peak,
           hotel: { id: String(t.hotelId._id), name: t.hotelId.name, stars: t.hotelId.starRating, city: t.hotelId.address?.city },
+          bookLink: bookingLink({ hotelId: t.hotelId._id, roomTypeId: t._id, checkIn, checkOut, rooms, adults, children }),
         };
       })
       .filter((r) => r.roomsLeft >= rooms)
@@ -211,7 +243,32 @@ const handlers = {
 
     return { checkIn, checkOut, nights: nights.length, rooms, results };
   },
-    async get_my_bookings({ upcomingOnly = true, limit = 5 }, { userId }) {
+
+  async get_coupons() {
+    const now = new Date();
+    const coupons = await Coupon.find({ status: "ACTIVE", startDate: { $lte: now }, endDate: { $gte: now } })
+      .select("code title shortDescription discountType discountValue minBookingAmount maxDiscount usageLimit usedCount endDate")
+      .lean();
+    return coupons.filter((c) => !c.usageLimit || c.usedCount < c.usageLimit);
+  },
+
+  // userId comes from the verified token (chatRoutes), never from the model
+  async get_user_profile(_args, { userId }) {
+    if (!userId) return { error: "User not logged in" };
+    const [user, wishlist] = await Promise.all([
+      User.findById(userId).select("fullName preferences").lean(),
+      Wishlist.find({ userId }).populate("hotelId", "name address.city").limit(10).lean(),
+    ]);
+    return {
+      name: user?.fullName,
+      preferences: user?.preferences,
+      wishlist: wishlist
+        .filter((w) => w.hotelId)
+        .map((w) => ({ id: String(w.hotelId._id), name: w.hotelId.name, city: w.hotelId.address?.city })),
+    };
+  },
+
+  async get_my_bookings({ upcomingOnly = true, limit = 5 }, { userId }) {
     if (!userId) return { error: "User not logged in" };
     const q = { userId };
     if (upcomingOnly) {
@@ -239,30 +296,9 @@ const handlers = {
       payment: b.paymentStatus,
     }));
   },
-
-  async get_coupons() {
-    const now = new Date();
-    const coupons = await Coupon.find({ status: "ACTIVE", startDate: { $lte: now }, endDate: { $gte: now } })
-      .select("code title shortDescription discountType discountValue minBookingAmount maxDiscount usageLimit usedCount endDate")
-      .lean();
-    return coupons.filter((c) => !c.usageLimit || c.usedCount < c.usageLimit);
-  },
-
-  // userId comes from your auth middleware, never from the model
-  async get_user_profile(_args, { userId }) {
-    if (!userId) return { error: "User not logged in" };
-    const [user, wishlist] = await Promise.all([
-      User.findById(userId).select("fullName preferences").lean(),
-      Wishlist.find({ userId }).populate("hotelId", "name address.city").limit(10).lean(),
-    ]);
-    return {
-      name: user?.fullName,
-      preferences: user?.preferences,
-      wishlist: wishlist.filter((w) => w.hotelId).map((w) => ({ id: String(w.hotelId._id), name: w.hotelId.name, city: w.hotelId.address?.city })),
-    };
-  },
 };
 
+// ---------- tool definitions (OpenAI function calling) ----------
 const fn = (name, description, properties = {}, required = []) => ({
   type: "function",
   function: { name, description, parameters: { type: "object", properties, required } },
@@ -286,32 +322,35 @@ const tools = [
     guests: { type: "number" },
     limit: { type: "number" },
   }),
-  fn("find_rooms", "Tìm loại phòng theo giá và sức chứa, rẻ nhất trước.", {
+  fn("find_rooms", "Tìm loại phòng theo giá và sức chứa, rẻ nhất trước. Mỗi phòng có bookLink.", {
     hotelId: { type: "string" },
+    hotelName: { type: "string", description: "Tên khách sạn, ví dụ Da Nang Beach Hotel" },
     maxPrice: { type: "number" },
     adults: { type: "number" },
     children: { type: "number" },
     limit: { type: "number" },
   }),
-  fn("get_coupons", "Danh sách mã giảm giá đang có hiệu lực."),
-  fn("get_user_profile", "Sở thích và wishlist của người dùng đang đăng nhập."),
-  fn("get_my_bookings", "Đơn đặt phòng của người dùng đang đăng nhập (mặc định: các đơn sắp tới).", {
-    upcomingOnly: { type: "boolean", description: "false để xem cả đơn đã qua" },
-    limit: { type: "number" },
-  }),
-  fn("check_availability", "Kiểm tra phòng còn trống theo ngày nhận/trả phòng; trả về giá tổng và số phòng còn lại.", {
+  fn("check_availability", "Kiểm tra phòng còn trống theo ngày nhận/trả phòng; trả về giá tổng, số phòng còn lại và bookLink.", {
     checkIn: { type: "string", description: "YYYY-MM-DD" },
     checkOut: { type: "string", description: "YYYY-MM-DD" },
     adults: { type: "number" },
     children: { type: "number" },
     rooms: { type: "number", description: "Số phòng cần đặt" },
     hotelId: { type: "string" },
+    hotelName: { type: "string", description: "Tên khách sạn, ví dụ Da Nang Beach Hotel" },
     city: { type: "string" },
     maxPrice: { type: "number", description: "Giá tối đa mỗi đêm" },
     limit: { type: "number" },
   }, ["checkIn", "checkOut"]),
+  fn("get_coupons", "Danh sách mã giảm giá đang có hiệu lực."),
+  fn("get_user_profile", "Sở thích và wishlist của người dùng đang đăng nhập."),
+  fn("get_my_bookings", "Đơn đặt phòng của người dùng đang đăng nhập (mặc định: các đơn sắp tới).", {
+    upcomingOnly: { type: "boolean", description: "false để xem cả đơn đã qua" },
+    limit: { type: "number" },
+  }),
 ];
 
+// ---------- main entry ----------
 export async function chat(history, userId) {
   const model = process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini";
   const messages = [{ role: "system", content: systemPrompt(!!userId) }, ...history];
@@ -323,6 +362,7 @@ export async function chat(history, userId) {
     if (!msg.tool_calls?.length) return msg.content;
 
     for (const call of msg.tool_calls) {
+      console.log("TOOL", call.function.name, call.function.arguments);
       let out;
       try {
         out = await handlers[call.function.name](JSON.parse(call.function.arguments || "{}"), { userId });

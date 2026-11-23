@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "./chatWidget.css";
+import "./ChatWidget.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -84,7 +84,23 @@ export default function ChatWidget() {
 
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg ${m.role === "user" ? "user" : "bot"}`}>
-                {m.role === "user" ? m.content : <ReactMarkdown>{m.content}</ReactMarkdown>}
+                {m.role === "user" ? (
+                  m.content
+                ) : (
+                  <ReactMarkdown
+                    components={{
+                      // in-app links (e.g. /booking?...) navigate without a page reload
+                      a: ({ href, children }) =>
+                        href?.startsWith("/") ? (
+                          <Link to={href} onClick={() => setOpen(false)}>{children}</Link>
+                        ) : (
+                          <a href={href} target="_blank" rel="noreferrer">{children}</a>
+                        ),
+                    }}
+                  >
+                    {m.content}
+                  </ReactMarkdown>
+                )}
               </div>
             ))}
 
