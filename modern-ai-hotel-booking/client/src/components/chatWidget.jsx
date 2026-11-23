@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./ChatWidget.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const GREETING = "Xin chào! Mình có thể giúp bạn tìm khách sạn, phòng phù hợp và mã giảm giá. Bạn muốn đi đâu?";
 const SUGGESTIONS = [
