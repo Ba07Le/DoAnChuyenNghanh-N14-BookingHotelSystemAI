@@ -19,8 +19,21 @@ export const authenticate = async (req, res, next) => {
       return unauthorized(res, "Vui lòng đăng nhập.");
     }
 
-    // Giữ tương thích với JWT hiện tại
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    let payload;
+
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      console.error("[JWT VERIFY FAILED]", {
+        name: error.name,
+        message: error.message,
+      });
+
+      return unauthorized(
+        res,
+        "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
+      );
+    }
 
     if (!payload.userId) {
       return unauthorized(res, "Token không hợp lệ.");
@@ -28,14 +41,14 @@ export const authenticate = async (req, res, next) => {
 
     // Lấy thông tin tài khoản từ MongoDB
     const user = await User.findById(payload.userId)
-      .select("+tokenVersion -passwordHash")
+      .select("+tokenVersion")
       .lean();
 
     if (!user || user.status !== "ACTIVE") {
       return unauthorized(res, "Phiên đăng nhập không còn hợp lệ.");
     }
 
-    // Token mới có tokenVersion thì kiểm tra phiên bản
+    // Kiểm tra phiên bản token
     if (payload.tokenVersion !== undefined) {
       const currentVersion = user.tokenVersion ?? 0;
 
@@ -54,7 +67,25 @@ export const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-    return unauthorized(res, "Token không hợp lệ hoặc đã hết hạn.");
+    console.error("[AUTH ERROR]", {
+      name: error.name,
+      message: error.message,
+    });
+
+    // JWT hết hạn hoặc không hợp lệ
+    if (
+      error.name === "TokenExpiredError" ||
+      error.name === "JsonWebTokenError" ||
+      error.name === "NotBeforeError"
+    ) {
+      return unauthorized(res, "Token không hợp lệ hoặc đã hết hạn.");
+    }
+
+    // Các lỗi khác: MongoDB, server...
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ khi xác thực tài khoản.",
+    });
   }
 };
 

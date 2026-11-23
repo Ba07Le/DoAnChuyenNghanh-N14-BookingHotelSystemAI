@@ -1,48 +1,118 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Search, SlidersHorizontal, ChevronDown, CalendarDays, Users, Minus, Plus } from "lucide-react";
+import {
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
+  CalendarDays,
+  Users,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import HotelCard from "../components/hotels/HotelCard";
 import FilterDrawer from "../components/filters/FilterDrawer";
 import { searchHotels } from "../api/hotelApi";
-const fallback = [];
+const EMPTY_FILTERS = {
+  cities: [],
+  hotelTypes: [],
+  stars: [],
+  minPrice: "",
+  maxPrice: "",
+  rating: "",
+  bedTypes: [],
+  amenities: [],
+};
+const TYPE_LABELS = {
+  HOTEL: "Khách sạn",
+  RESORT: "Resort",
+  VILLA: "Villa",
+  APARTMENT: "Căn hộ",
+  HOMESTAY: "Homestay",
+  BOUTIQUE: "Boutique Hotel",
+};
+const AMENITY_LABELS = {
+  wifi: "Wi-Fi",
+  "air-conditioning": "Máy lạnh",
+  "smart-tv": "Smart TV",
+  bathtub: "Bồn tắm",
+};
+const filterParams = (f) => ({
+  cities: f.cities.join(",") || undefined,
+  hotelType: f.hotelTypes.join(",") || undefined,
+  stars: f.stars.join(",") || undefined,
+  rating: f.rating || undefined,
+  minPrice: f.minPrice !== "" ? f.minPrice : undefined,
+  maxPrice: f.maxPrice !== "" ? f.maxPrice : undefined,
+  bedTypes: f.bedTypes.join(",") || undefined,
+  amenities: f.amenities.join(",") || undefined,
+});
 function Hotels() {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("destination") || "");
   const [checkIn, setCheckIn] = useState(params.get("checkIn") || "");
   const [checkOut, setCheckOut] = useState(params.get("checkOut") || "");
-  const [adults, setAdults] = useState(Math.max(1, Number(params.get("adults")) || 2));
-  const [children, setChildren] = useState(Math.max(0, Number(params.get("children")) || 0));
-  const [rooms, setRooms] = useState(Math.max(1, Number(params.get("rooms")) || 1));
+  const [adults, setAdults] = useState(
+    Math.max(1, Number(params.get("adults")) || 2),
+  );
+  const [children, setChildren] = useState(
+    Math.max(0, Number(params.get("children")) || 0),
+  );
+  const [rooms, setRooms] = useState(
+    Math.max(1, Number(params.get("rooms")) || 1),
+  );
   const [openGuests, setOpenGuests] = useState(false);
   const [dateError, setDateError] = useState("");
   const [sort, setSort] = useState("recommended");
-  const [hotels, setHotels] = useState(fallback);
+  const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({});
-  const fetch = async (extra = {}) => {
-    try {
-      setLoading(true);
-      setError("");
-      const r = await searchHotels({
-        destination: search,
-        ...extra,
-        ...filters,
-      });
-      if (r.success) setHotels(r.data || []);
-    } catch (e) {
-      setError(
-        e.response?.data?.message || "Không thể tải danh sách khách sạn.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-  // URL là nguồn dữ liệu đã xác nhận; khi Back/Forward cũng khôi phục lại form.
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [refreshCount, setRefreshCount] = useState(0);
   const queryString = params.toString();
+  // Một nguồn trạng thái duy nhất cho API; loại bỏ lỗi gọi API với filter cũ.
+  useEffect(() => {
+    let cancelled = false;
+    const p = new URLSearchParams(queryString);
+    const request = {
+      destination: p.get("destination") || "",
+      ...(p.get("checkIn") && p.get("checkOut")
+        ? {
+            checkIn: p.get("checkIn"),
+            checkOut: p.get("checkOut"),
+          }
+        : {}),
+      adults: p.get("adults") || 2,
+      children: p.get("children") || 0,
+      rooms: p.get("rooms") || 1,
+      ...filterParams(filters),
+    };
+    setLoading(true);
+    setError("");
+    searchHotels(request)
+      .then((r) => {
+        if (!cancelled) setHotels(r.success ? r.data || [] : []);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setHotels([]);
+          setError(
+            e.response?.data?.message || "Không thể tải danh sách khách sạn.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [queryString, filters, refreshCount]);
+  // URL là nguồn dữ liệu đã xác nhận; khi Back/Forward cũng khôi phục lại form.
   useEffect(() => {
     const p = new URLSearchParams(queryString);
     const destination = p.get("destination") || "";
@@ -53,8 +123,6 @@ function Hotels() {
     setChildren(Math.max(0, Number(p.get("children")) || 0));
     setRooms(Math.max(1, Number(p.get("rooms")) || 1));
     setDateError("");
-    // Chỉ dùng điểm đến cho API hiện tại; ngày/khách được dùng tại Booking Quote.
-    fetch({ destination });
   }, [queryString]);
 
   const handleSearch = () => {
@@ -69,11 +137,13 @@ function Hotels() {
     if (checkIn) next.set("checkIn", checkIn);
     if (checkOut) next.set("checkOut", checkOut);
     // Khi chưa tìm từ Hero, không tự lưu mặc định khách/phòng vào URL.
-    if (params.has("adults") || adults !== 2) next.set("adults", String(adults));
-    if (params.has("children") || children !== 0) next.set("children", String(children));
+    if (params.has("adults") || adults !== 2)
+      next.set("adults", String(adults));
+    if (params.has("children") || children !== 0)
+      next.set("children", String(children));
     if (params.has("rooms") || rooms !== 1) next.set("rooms", String(rooms));
     if (next.toString() === queryString) {
-      fetch({ destination: search.trim() });
+      setRefreshCount((n) => n + 1);
     } else {
       setParams(next);
     }
@@ -85,27 +155,64 @@ function Hotels() {
     if (sort === "rating") x.sort((a, b) => b.averageRating - a.averageRating);
     return x;
   }, [hotels, sort]);
-  const handleApplyFilters = (f) => {
-    setFilters({
-      hotelType: f.hotelTypes?.join(",") || undefined,
-      stars: f.stars?.length ? Math.min(...f.stars) : undefined,
-      rating: f.rating || undefined,
-      minPrice: f.minPrice || undefined,
-      maxPrice: f.maxPrice || undefined,
-    });
+  const handleApplyFilters = (next) => {
+    setFilters({ ...EMPTY_FILTERS, ...next });
     setIsFilterOpen(false);
-    setTimeout(
-      () =>
-        fetch({
-          hotelType: f.hotelTypes?.join(",") || undefined,
-          stars: f.stars?.length ? Math.min(...f.stars) : undefined,
-          rating: f.rating || undefined,
-          minPrice: f.minPrice || undefined,
-          maxPrice: f.maxPrice || undefined,
-        }),
-      0,
-    );
   };
+  const removeFilter = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: Array.isArray(prev[key])
+        ? prev[key].filter((v) => v !== value)
+        : "",
+    }));
+  };
+  const selectedChips = [
+    ...filters.cities.map((v) => ({ key: "cities", value: v, label: v })),
+    ...filters.hotelTypes.map((v) => ({
+      key: "hotelTypes",
+      value: v,
+      label: TYPE_LABELS[v] || v,
+    })),
+    ...filters.stars.map((v) => ({
+      key: "stars",
+      value: v,
+      label: `${v} sao`,
+    })),
+    ...(filters.rating
+      ? [
+          {
+            key: "rating",
+            value: filters.rating,
+            label: `Đánh giá ${filters.rating}+`,
+          },
+        ]
+      : []),
+    ...(filters.minPrice !== ""
+      ? [
+          {
+            key: "minPrice",
+            value: filters.minPrice,
+            label: `Giá từ ${Number(filters.minPrice).toLocaleString("vi-VN")}đ`,
+          },
+        ]
+      : []),
+    ...(filters.maxPrice !== ""
+      ? [
+          {
+            key: "maxPrice",
+            value: filters.maxPrice,
+            label: `Giá đến ${Number(filters.maxPrice).toLocaleString("vi-VN")}đ`,
+          },
+        ]
+      : []),
+    ...filters.bedTypes.map((v) => ({ key: "bedTypes", value: v, label: v })),
+    ...filters.amenities.map((v) => ({
+      key: "amenities",
+      value: v,
+      label: AMENITY_LABELS[v] || v,
+    })),
+  ];
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -128,56 +235,112 @@ function Hotels() {
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
               <CalendarDays size={19} className="shrink-0 text-blue-600" />
               <label className="min-w-0 flex-1">
-                <span className="block text-xs font-medium text-slate-400">Nhận phòng</span>
-                <input type="date" value={checkIn}
+                <span className="block text-xs font-medium text-slate-400">
+                  Nhận phòng
+                </span>
+                <input
+                  type="date"
+                  value={checkIn}
                   onChange={(e) => {
                     const value = e.target.value;
                     setCheckIn(value);
                     if (checkOut && value && checkOut <= value) setCheckOut("");
                     setDateError("");
                   }}
-                  className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" />
+                  className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none"
+                />
               </label>
               <div className="h-8 w-px bg-slate-200" />
               <label className="min-w-0 flex-1">
-                <span className="block text-xs font-medium text-slate-400">Trả phòng</span>
-                <input type="date" value={checkOut} min={checkIn || undefined}
-                  onChange={(e) => { setCheckOut(e.target.value); setDateError(""); }}
-                  className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" />
+                <span className="block text-xs font-medium text-slate-400">
+                  Trả phòng
+                </span>
+                <input
+                  type="date"
+                  value={checkOut}
+                  min={checkIn || undefined}
+                  onChange={(e) => {
+                    setCheckOut(e.target.value);
+                    setDateError("");
+                  }}
+                  className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none"
+                />
               </label>
             </div>
             <div className="relative shrink-0">
-              <button type="button" onClick={() => setOpenGuests((v) => !v)}
-                className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left hover:bg-slate-100">
+              <button
+                type="button"
+                onClick={() => setOpenGuests((v) => !v)}
+                className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
+              >
                 <Users size={19} className="text-blue-600" />
                 <span>
-                  <span className="block text-xs font-medium text-slate-400">Khách & phòng</span>
-                  <span className="block text-sm font-semibold text-slate-800">{adults + children} người · {rooms} phòng</span>
+                  <span className="block text-xs font-medium text-slate-400">
+                    Khách & phòng
+                  </span>
+                  <span className="block text-sm font-semibold text-slate-800">
+                    {adults + children} người · {rooms} phòng
+                  </span>
                 </span>
                 <ChevronDown size={16} className="text-slate-400" />
               </button>
               {openGuests && (
                 <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
                   {[
-                    { label: "Người lớn", value: adults, set: setAdults, min: 1 },
-                    { label: "Trẻ em", value: children, set: setChildren, min: 0 },
+                    {
+                      label: "Người lớn",
+                      value: adults,
+                      set: setAdults,
+                      min: 1,
+                    },
+                    {
+                      label: "Trẻ em",
+                      value: children,
+                      set: setChildren,
+                      min: 0,
+                    },
                     { label: "Phòng", value: rooms, set: setRooms, min: 1 },
                   ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0"
+                    >
+                      <span className="text-sm font-medium text-slate-700">
+                        {item.label}
+                      </span>
                       <div className="flex items-center gap-3">
-                        <button type="button" aria-label={`Giảm ${item.label}`} disabled={item.value <= item.min}
-                          onClick={() => item.set((n) => Math.max(item.min, n - 1))}
-                          className="rounded-full border border-slate-200 p-2 disabled:opacity-30"><Minus size={14} /></button>
-                        <span className="w-5 text-center text-sm font-semibold">{item.value}</span>
-                        <button type="button" aria-label={`Tăng ${item.label}`}
+                        <button
+                          type="button"
+                          aria-label={`Giảm ${item.label}`}
+                          disabled={item.value <= item.min}
+                          onClick={() =>
+                            item.set((n) => Math.max(item.min, n - 1))
+                          }
+                          className="rounded-full border border-slate-200 p-2 disabled:opacity-30"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-5 text-center text-sm font-semibold">
+                          {item.value}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Tăng ${item.label}`}
                           onClick={() => item.set((n) => n + 1)}
-                          className="rounded-full border border-slate-200 p-2"><Plus size={14} /></button>
+                          className="rounded-full border border-slate-200 p-2"
+                        >
+                          <Plus size={14} />
+                        </button>
                       </div>
                     </div>
                   ))}
-                  <button type="button" onClick={() => setOpenGuests(false)}
-                    className="mt-3 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Xong</button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGuests(false)}
+                    className="mt-3 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Xong
+                  </button>
                 </div>
               )}
             </div>
@@ -190,7 +353,11 @@ function Hotels() {
             </button>
           </div>
         </div>
-        {dateError && <p className="mx-auto max-w-7xl px-6 pb-3 text-sm text-red-600">{dateError}</p>}
+        {dateError && (
+          <p className="mx-auto max-w-7xl px-6 pb-3 text-sm text-red-600">
+            {dateError}
+          </p>
+        )}
       </section>
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-5 text-sm text-slate-400">
@@ -234,15 +401,17 @@ function Hotels() {
             <SlidersHorizontal size={15} />
             Bộ lọc
           </button>
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500">
-            Tất cả khách sạn
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500">
-            Có Wi-Fi
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500">
-            Đánh giá 4+
-          </span>
+          {selectedChips.map((chip) => (
+            <button
+              key={`${chip.key}:${chip.value}`}
+              type="button"
+              onClick={() => removeFilter(chip.key, chip.value)}
+              aria-label={`Bỏ lọc ${chip.label}`}
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"
+            >
+              {chip.label} <X size={14} />
+            </button>
+          ))}
         </div>
         {error && (
           <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -291,6 +460,7 @@ function Hotels() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={handleApplyFilters}
+        value={filters}
       />
       <Footer />
     </div>

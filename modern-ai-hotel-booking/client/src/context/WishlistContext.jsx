@@ -31,7 +31,10 @@ export function WishlistProvider({ children }) {
   const [authRejectedToken, setAuthRejectedToken] = useState(null);
 
   const canLoad = Boolean(token && user && sessionVerified);
-  const likedIds = canLoad && wishlist.token === token ? wishlist.ids : NO_IDS;
+  const likedIds =
+    canLoad && wishlist.token === token
+      ? wishlist.ids.map((id) => String(id))
+      : NO_IDS;
 
   useEffect(() => {
     if (!canLoad || authRejectedToken === token) {
@@ -44,9 +47,15 @@ export function WishlistProvider({ children }) {
       .then((data) => {
         if (cancelled) return;
 
+        const ids = Array.isArray(data?.ids)
+          ? data.ids
+          : Array.isArray(data?.data?.ids)
+            ? data.data.ids
+            : [];
+
         setWishlist({
           token,
-          ids: Array.isArray(data?.ids) ? data.ids : [],
+          ids: ids.map((id) => String(id)),
         });
       })
       .catch((error) => {

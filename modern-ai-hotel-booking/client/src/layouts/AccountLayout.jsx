@@ -16,7 +16,7 @@ const menuItems = [
 
 // Khung dùng chung cho các trang tài khoản: Hồ sơ, Đặt phòng, Wishlist, Thông báo
 function AccountLayout() {
-  const { isAuthenticated, sessionChecking } = useAuth();
+  const { isAuthenticated, token, sessionVerified } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Số thông báo chưa đọc hiện ở menu; trang Thông báo cập nhật lại qua Outlet context
@@ -38,14 +38,19 @@ function AccountLayout() {
     };
   }, [isAuthenticated]);
 
-  if (sessionChecking) {
+  if (token && !sessionVerified) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <main className="mx-auto max-w-6xl px-6 py-20 text-center text-slate-500">
-          Đang kiểm tra phiên đăng nhập...
-        </main>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Đang xác minh phiên đăng nhập...</p>
+      </div>
+    );
+  }
+
+  // Có token nhưng đang xác minh phiên: chưa chuyển hướng
+  if (token && !sessionVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-600">Đang xác minh phiên đăng nhập...</p>
       </div>
     );
   }
