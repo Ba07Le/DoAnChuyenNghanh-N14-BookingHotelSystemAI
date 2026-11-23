@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import mongoose from "mongoose";
 import Hotel from "../src/models/Hotel.js";
 import Review from "../src/models/Review.js";
@@ -14,7 +14,7 @@ for (const h of hotels) {
   const reviews = await Review.find({ hotelId: h._id, status: "PUBLISHED" })
     .sort({ createdAt: -1 }).limit(5).select("comment").lean();
   const vector = await embed(buildHotelText(h, reviews));
-  await Hotel.updateOne({ _id: h._id }, { $set: { embedding: vector } });
+  await Hotel.collection.updateOne({ _id: h._id }, { $set: { embedding: vector } });
   console.log("done:", h.name);
 }
 
