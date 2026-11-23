@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -11,11 +12,13 @@ import {
   Plus,
   X,
 } from "lucide-react";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import HotelCard from "../components/hotels/HotelCard";
 import FilterDrawer from "../components/filters/FilterDrawer";
 import { searchHotels } from "../api/hotelApi";
+
 const EMPTY_FILTERS = {
   cities: [],
   hotelTypes: [],
@@ -26,6 +29,7 @@ const EMPTY_FILTERS = {
   bedTypes: [],
   amenities: [],
 };
+
 const TYPE_LABELS = {
   HOTEL: "Khách sạn",
   RESORT: "Resort",
@@ -34,12 +38,15 @@ const TYPE_LABELS = {
   HOMESTAY: "Homestay",
   BOUTIQUE: "Boutique Hotel",
 };
+
 const AMENITY_LABELS = {
   wifi: "Wi-Fi",
   "air-conditioning": "Máy lạnh",
   "smart-tv": "Smart TV",
   bathtub: "Bồn tắm",
 };
+
+// Chuyển bộ lọc frontend thành tham số API
 const filterParams = (f) => ({
   cities: f.cities.join(",") || undefined,
   hotelType: f.hotelTypes.join(",") || undefined,
@@ -50,135 +57,369 @@ const filterParams = (f) => ({
   bedTypes: f.bedTypes.join(",") || undefined,
   amenities: f.amenities.join(",") || undefined,
 });
+
+// Đọc bộ lọc từ URL
+// Hỗ trợ cả URL cũ: city, type
+// Và URL chuẩn: cities, hotelType
+const filtersFromParams = (params) => ({
+  cities: (params.get("cities") || params.get("city") || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean),
+
+  hotelTypes: (
+    params.get("hotelType") ||
+    params.get("type") ||
+    ""
+  )
+    .split(",")
+    .map((v) => v.trim().toUpperCase())
+    .filter((v) => Object.prototype.hasOwnProperty.call(TYPE_LABELS, v)),
+
+  stars: (params.get("stars") || "")
+    .split(",")
+    .map(Number)
+    .filter((v) => Number.isInteger(v) && v >= 1 && v <= 5),
+
+  minPrice: params.get("minPrice") || "",
+  maxPrice: params.get("maxPrice") || "",
+  rating: params.get("rating") || "",
+
+  bedTypes: (params.get("bedTypes") || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean),
+
+  amenities: (params.get("amenities") || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean),
+});
+
+// Ghi bộ lọc vào URL
+const writeFiltersToParams = (params, filters) => {
+  const next = new URLSearchParams(params);
+
+  // Xóa tham số cũ để tránh trùng lặp
+  [
+    "city",
+    "cities",
+    "type",
+    "hotelType",
+    "stars",
+    "rating",
+    "minPrice",
+    "maxPrice",
+    "bedTypes",
+    "amenities",
+  ].forEach((key) => next.delete(key));
+
+  const values = filterParams(filters);
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (value !== undefined) {
+      next.set(key, String(value));
+    }
+  });
+
+  return next;
+};
+
 function Hotels() {
   const [params, setParams] = useSearchParams();
-  const [search, setSearch] = useState(params.get("destination") || "");
-  const [checkIn, setCheckIn] = useState(params.get("checkIn") || "");
-  const [checkOut, setCheckOut] = useState(params.get("checkOut") || "");
+
+  const queryString = params.toString();
+
+  const [search, setSearch] = useState(
+    params.get("destination") || ""
+  );
+
+  const [checkIn, setCheckIn] = useState(
+    params.get("checkIn") || ""
+  );
+
+  const [checkOut, setCheckOut] = useState(
+    params.get("checkOut") || ""
+  );
+
   const [adults, setAdults] = useState(
-    Math.max(1, Number(params.get("adults")) || 2),
+    Math.max(1, Number(params.get("adults")) || 2)
   );
+
   const [children, setChildren] = useState(
-    Math.max(0, Number(params.get("children")) || 0),
+    Math.max(0, Number(params.get("children")) || 0)
   );
+
   const [rooms, setRooms] = useState(
-    Math.max(1, Number(params.get("rooms")) || 1),
+    Math.max(1, Number(params.get("rooms")) || 1)
   );
+
   const [openGuests, setOpenGuests] = useState(false);
   const [dateError, setDateError] = useState("");
+
   const [sort, setSort] = useState("recommended");
+
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  const [filters, setFilters] = useState(() =>
+    filtersFromParams(params)
+  );
+
   const [refreshCount, setRefreshCount] = useState(0);
-  const queryString = params.toString();
-  // Một nguồn trạng thái duy nhất cho API; loại bỏ lỗi gọi API với filter cũ.
+
+  // ==========================================
+  // 1. ĐỒNG BỘ URL VÀ BỘ LỌC
+  // ==========================================
+
+  useEffect(() => {
+    const p = new URLSearchParams(queryString);
+
+    setSearch(p.get("destination") || "");
+    setCheckIn(p.get("checkIn") || "");
+    setCheckOut(p.get("checkOut") || "");
+
+    setAdults(
+      Math.max(1, Number(p.get("adults")) || 2)
+    );
+
+    setChildren(
+      Math.max(0, Number(p.get("children")) || 0)
+    );
+
+    setRooms(
+      Math.max(1, Number(p.get("rooms")) || 1)
+    );
+
+    // Khôi phục bộ lọc khi truy cập URL,
+    // tải lại trang hoặc Back / Forward.
+    setFilters(filtersFromParams(p));
+
+    setDateError("");
+  }, [queryString]);
+
+  // ==========================================
+  // 2. GỌI API TÌM KIẾM KHÁCH SẠN
+  // ==========================================
+
   useEffect(() => {
     let cancelled = false;
+
     const p = new URLSearchParams(queryString);
+
     const request = {
       destination: p.get("destination") || "",
+
       ...(p.get("checkIn") && p.get("checkOut")
         ? {
             checkIn: p.get("checkIn"),
             checkOut: p.get("checkOut"),
           }
         : {}),
+
       adults: p.get("adults") || 2,
       children: p.get("children") || 0,
       rooms: p.get("rooms") || 1,
+
       ...filterParams(filters),
     };
+
     setLoading(true);
     setError("");
+
     searchHotels(request)
       .then((r) => {
-        if (!cancelled) setHotels(r.success ? r.data || [] : []);
+        if (!cancelled) {
+          setHotels(
+            r.success ? r.data || [] : []
+          );
+        }
       })
       .catch((e) => {
         if (!cancelled) {
           setHotels([]);
+
           setError(
-            e.response?.data?.message || "Không thể tải danh sách khách sạn.",
+            e.response?.data?.message ||
+              "Không thể tải danh sách khách sạn."
           );
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       });
+
     return () => {
       cancelled = true;
     };
   }, [queryString, filters, refreshCount]);
-  // URL là nguồn dữ liệu đã xác nhận; khi Back/Forward cũng khôi phục lại form.
-  useEffect(() => {
-    const p = new URLSearchParams(queryString);
-    const destination = p.get("destination") || "";
-    setSearch(destination);
-    setCheckIn(p.get("checkIn") || "");
-    setCheckOut(p.get("checkOut") || "");
-    setAdults(Math.max(1, Number(p.get("adults")) || 2));
-    setChildren(Math.max(0, Number(p.get("children")) || 0));
-    setRooms(Math.max(1, Number(p.get("rooms")) || 1));
-    setDateError("");
-  }, [queryString]);
+
+  // ==========================================
+  // 3. TÌM KIẾM
+  // ==========================================
 
   const handleSearch = () => {
-    if (checkIn && checkOut && checkOut <= checkIn) {
-      setDateError("Ngày trả phòng phải sau ngày nhận phòng.");
+    if (
+      checkIn &&
+      checkOut &&
+      checkOut <= checkIn
+    ) {
+      setDateError(
+        "Ngày trả phòng phải sau ngày nhận phòng."
+      );
       return;
     }
+
     setDateError("");
     setOpenGuests(false);
-    const next = new URLSearchParams();
-    if (search.trim()) next.set("destination", search.trim());
+
+    const next = new URLSearchParams(params);
+
+    // Cập nhật điểm đến
+    next.delete("destination");
+
+    if (search.trim()) {
+      next.set("destination", search.trim());
+    }
+
+    // Cập nhật ngày
+    next.delete("checkIn");
+    next.delete("checkOut");
+
     if (checkIn) next.set("checkIn", checkIn);
     if (checkOut) next.set("checkOut", checkOut);
-    // Khi chưa tìm từ Hero, không tự lưu mặc định khách/phòng vào URL.
-    if (params.has("adults") || adults !== 2)
+
+    // Cập nhật số khách và phòng
+    if (params.has("adults") || adults !== 2) {
       next.set("adults", String(adults));
-    if (params.has("children") || children !== 0)
+    } else {
+      next.delete("adults");
+    }
+
+    if (params.has("children") || children !== 0) {
       next.set("children", String(children));
-    if (params.has("rooms") || rooms !== 1) next.set("rooms", String(rooms));
-    if (next.toString() === queryString) {
+    } else {
+      next.delete("children");
+    }
+
+    if (params.has("rooms") || rooms !== 1) {
+      next.set("rooms", String(rooms));
+    } else {
+      next.delete("rooms");
+    }
+
+    // Giữ nguyên bộ lọc đang chọn
+    const updated = writeFiltersToParams(
+      next,
+      filters
+    );
+
+    if (updated.toString() === queryString) {
       setRefreshCount((n) => n + 1);
     } else {
-      setParams(next);
+      setParams(updated);
     }
   };
+
+  // ==========================================
+  // 4. SẮP XẾP
+  // ==========================================
+
   const visible = useMemo(() => {
     const x = [...hotels];
-    if (sort === "priceLow") x.sort((a, b) => a.priceFrom - b.priceFrom);
-    if (sort === "priceHigh") x.sort((a, b) => b.priceFrom - a.priceFrom);
-    if (sort === "rating") x.sort((a, b) => b.averageRating - a.averageRating);
+
+    if (sort === "priceLow") {
+      x.sort(
+        (a, b) => a.priceFrom - b.priceFrom
+      );
+    }
+
+    if (sort === "priceHigh") {
+      x.sort(
+        (a, b) => b.priceFrom - a.priceFrom
+      );
+    }
+
+    if (sort === "rating") {
+      x.sort(
+        (a, b) =>
+          b.averageRating - a.averageRating
+      );
+    }
+
     return x;
   }, [hotels, sort]);
+
+  // ==========================================
+  // 5. ÁP DỤNG BỘ LỌC
+  // ==========================================
+
   const handleApplyFilters = (next) => {
-    setFilters({ ...EMPTY_FILTERS, ...next });
+    const updatedFilters = {
+      ...EMPTY_FILTERS,
+      ...next,
+    };
+
+    setFilters(updatedFilters);
+
+    // Đồng bộ bộ lọc vào URL
+    const updatedParams = writeFiltersToParams(
+      params,
+      updatedFilters
+    );
+
+    setParams(updatedParams);
+
     setIsFilterOpen(false);
   };
+
+  // ==========================================
+  // 6. XÓA TỪNG BỘ LỌC
+  // ==========================================
+
   const removeFilter = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: Array.isArray(prev[key])
-        ? prev[key].filter((v) => v !== value)
+    const updated = {
+      ...filters,
+      [key]: Array.isArray(filters[key])
+        ? filters[key].filter((v) => v !== value)
         : "",
-    }));
+    };
+
+    setFilters(updated);
+
+    setParams(
+      writeFiltersToParams(params, updated)
+    );
   };
+
+  // ==========================================
+  // 7. DANH SÁCH FILTER CHIP
+  // ==========================================
+
   const selectedChips = [
-    ...filters.cities.map((v) => ({ key: "cities", value: v, label: v })),
+    ...filters.cities.map((v) => ({
+      key: "cities",
+      value: v,
+      label: v,
+    })),
+
     ...filters.hotelTypes.map((v) => ({
       key: "hotelTypes",
       value: v,
       label: TYPE_LABELS[v] || v,
     })),
+
     ...filters.stars.map((v) => ({
       key: "stars",
       value: v,
       label: `${v} sao`,
     })),
+
     ...(filters.rating
       ? [
           {
@@ -188,73 +429,124 @@ function Hotels() {
           },
         ]
       : []),
+
     ...(filters.minPrice !== ""
       ? [
           {
             key: "minPrice",
             value: filters.minPrice,
-            label: `Giá từ ${Number(filters.minPrice).toLocaleString("vi-VN")}đ`,
+            label: `Giá từ ${Number(
+              filters.minPrice
+            ).toLocaleString("vi-VN")}đ`,
           },
         ]
       : []),
+
     ...(filters.maxPrice !== ""
       ? [
           {
             key: "maxPrice",
             value: filters.maxPrice,
-            label: `Giá đến ${Number(filters.maxPrice).toLocaleString("vi-VN")}đ`,
+            label: `Giá đến ${Number(
+              filters.maxPrice
+            ).toLocaleString("vi-VN")}đ`,
           },
         ]
       : []),
-    ...filters.bedTypes.map((v) => ({ key: "bedTypes", value: v, label: v })),
+
+    ...filters.bedTypes.map((v) => ({
+      key: "bedTypes",
+      value: v,
+      label: v,
+    })),
+
     ...filters.amenities.map((v) => ({
       key: "amenities",
       value: v,
       label: AMENITY_LABELS[v] || v,
     })),
   ];
+
+  // ==========================================
+  // 8. GIAO DIỆN
+  // ==========================================
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
+
+      {/* THANH TÌM KIẾM */}
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
+
+            {/* Điểm đến */}
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-              <MapPin size={19} className="text-blue-600" />
+              <MapPin
+                size={19}
+                className="text-blue-600"
+              />
+
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-slate-400">Điểm đến</p>
+                <p className="text-xs font-medium text-slate-400">
+                  Điểm đến
+                </p>
+
                 <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  onChange={(e) =>
+                    setSearch(e.target.value)
+                  }
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && handleSearch()
+                  }
                   placeholder="Bạn muốn đi đâu?"
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
                 />
               </div>
             </div>
+
+            {/* Ngày nhận và trả phòng */}
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-              <CalendarDays size={19} className="shrink-0 text-blue-600" />
+              <CalendarDays
+                size={19}
+                className="shrink-0 text-blue-600"
+              />
+
               <label className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-slate-400">
                   Nhận phòng
                 </span>
+
                 <input
                   type="date"
                   value={checkIn}
                   onChange={(e) => {
                     const value = e.target.value;
+
                     setCheckIn(value);
-                    if (checkOut && value && checkOut <= value) setCheckOut("");
+
+                    if (
+                      checkOut &&
+                      value &&
+                      checkOut <= value
+                    ) {
+                      setCheckOut("");
+                    }
+
                     setDateError("");
                   }}
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none"
                 />
               </label>
+
               <div className="h-8 w-px bg-slate-200" />
+
               <label className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-slate-400">
                   Trả phòng
                 </span>
+
                 <input
                   type="date"
                   value={checkOut}
@@ -267,23 +559,37 @@ function Hotels() {
                 />
               </label>
             </div>
+
+            {/* Số khách và phòng */}
             <div className="relative shrink-0">
               <button
                 type="button"
-                onClick={() => setOpenGuests((v) => !v)}
+                onClick={() =>
+                  setOpenGuests((v) => !v)
+                }
                 className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
               >
-                <Users size={19} className="text-blue-600" />
+                <Users
+                  size={19}
+                  className="text-blue-600"
+                />
+
                 <span>
                   <span className="block text-xs font-medium text-slate-400">
                     Khách & phòng
                   </span>
+
                   <span className="block text-sm font-semibold text-slate-800">
                     {adults + children} người · {rooms} phòng
                   </span>
                 </span>
-                <ChevronDown size={16} className="text-slate-400" />
+
+                <ChevronDown
+                  size={16}
+                  className="text-slate-400"
+                />
               </button>
+
               {openGuests && (
                 <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
                   {[
@@ -299,7 +605,12 @@ function Hotels() {
                       set: setChildren,
                       min: 0,
                     },
-                    { label: "Phòng", value: rooms, set: setRooms, min: 1 },
+                    {
+                      label: "Phòng",
+                      value: rooms,
+                      set: setRooms,
+                      min: 1,
+                    },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -308,25 +619,32 @@ function Hotels() {
                       <span className="text-sm font-medium text-slate-700">
                         {item.label}
                       </span>
+
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           aria-label={`Giảm ${item.label}`}
                           disabled={item.value <= item.min}
                           onClick={() =>
-                            item.set((n) => Math.max(item.min, n - 1))
+                            item.set((n) =>
+                              Math.max(item.min, n - 1)
+                            )
                           }
                           className="rounded-full border border-slate-200 p-2 disabled:opacity-30"
                         >
                           <Minus size={14} />
                         </button>
+
                         <span className="w-5 text-center text-sm font-semibold">
                           {item.value}
                         </span>
+
                         <button
                           type="button"
                           aria-label={`Tăng ${item.label}`}
-                          onClick={() => item.set((n) => n + 1)}
+                          onClick={() =>
+                            item.set((n) => n + 1)
+                          }
                           className="rounded-full border border-slate-200 p-2"
                         >
                           <Plus size={14} />
@@ -334,6 +652,7 @@ function Hotels() {
                       </div>
                     </div>
                   ))}
+
                   <button
                     type="button"
                     onClick={() => setOpenGuests(false)}
@@ -344,7 +663,10 @@ function Hotels() {
                 </div>
               )}
             </div>
+
+            {/* Nút tìm kiếm */}
             <button
+              type="button"
               onClick={handleSearch}
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg"
             >
@@ -353,71 +675,111 @@ function Hotels() {
             </button>
           </div>
         </div>
+
         {dateError && (
           <p className="mx-auto max-w-7xl px-6 pb-3 text-sm text-red-600">
             {dateError}
           </p>
         )}
       </section>
+
+      {/* DANH SÁCH KHÁCH SẠN */}
       <main className="mx-auto max-w-7xl px-6 py-8">
+
+        {/* Breadcrumb */}
         <div className="mb-5 text-sm text-slate-400">
-          Trang chủ <span className="mx-2">/</span>
-          <span className="font-medium text-slate-600">Khách sạn</span>
+          Trang chủ
+          <span className="mx-2">/</span>
+          <span className="font-medium text-slate-600">
+            Khách sạn
+          </span>
         </div>
+
+        {/* Tiêu đề và sắp xếp */}
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               Khám phá khách sạn
             </h1>
+
             <p className="mt-2 text-sm text-slate-500">
               {loading
                 ? "Đang tìm kiếm..."
                 : `${visible.length} nơi lưu trú phù hợp`}
             </p>
           </div>
+
           <div className="relative flex items-center gap-2">
-            <span className="text-sm text-slate-500">Sắp xếp:</span>
+            <span className="text-sm text-slate-500">
+              Sắp xếp:
+            </span>
+
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) =>
+                setSort(e.target.value)
+              }
               className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-none"
             >
-              <option value="recommended">Đề xuất</option>
-              <option value="rating">Đánh giá cao</option>
-              <option value="priceLow">Giá thấp</option>
-              <option value="priceHigh">Giá cao</option>
+              <option value="recommended">
+                Đề xuất
+              </option>
+
+              <option value="rating">
+                Đánh giá cao
+              </option>
+
+              <option value="priceLow">
+                Giá thấp
+              </option>
+
+              <option value="priceHigh">
+                Giá cao
+              </option>
             </select>
+
             <ChevronDown
               size={15}
               className="pointer-events-none absolute right-3 text-slate-400"
             />
           </div>
         </div>
+
+        {/* Bộ lọc và Filter Chips */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => setIsFilterOpen(true)}
             className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-600"
           >
             <SlidersHorizontal size={15} />
             Bộ lọc
           </button>
+
           {selectedChips.map((chip) => (
             <button
               key={`${chip.key}:${chip.value}`}
               type="button"
-              onClick={() => removeFilter(chip.key, chip.value)}
+              onClick={() =>
+                removeFilter(chip.key, chip.value)
+              }
               aria-label={`Bỏ lọc ${chip.label}`}
               className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"
             >
-              {chip.label} <X size={14} />
+              {chip.label}
+              <X size={14} />
             </button>
           ))}
         </div>
+
+        {/* Thông báo lỗi */}
         {error && (
           <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
+
+        {/* Kết quả */}
         {loading ? (
           <div className="space-y-5">
             {[1, 2, 3].map((i) => (
@@ -436,9 +798,13 @@ function Hotels() {
                 hotel={{
                   ...h,
                   id: h._id,
+
                   image:
-                    h.images?.find((x) => x.isPrimary)?.url ||
+                    h.images?.find(
+                      (x) => x.isPrimary
+                    )?.url ||
                     h.images?.[0]?.url,
+
                   stars: h.starRating,
                   rating: h.averageRating,
                   reviews: h.reviewCount,
@@ -456,14 +822,18 @@ function Hotels() {
           </div>
         )}
       </main>
+
+      {/* FILTER DRAWER */}
       <FilterDrawer
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={handleApplyFilters}
         value={filters}
       />
+
       <Footer />
     </div>
   );
 }
+
 export default Hotels;

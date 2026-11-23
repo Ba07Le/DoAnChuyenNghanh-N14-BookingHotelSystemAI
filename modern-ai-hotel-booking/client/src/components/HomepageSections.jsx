@@ -16,7 +16,10 @@ import {
    1. POPULAR DESTINATIONS
 ========================================================= */
 
-export function PopularDestinations({ destinations = [], isLoading = false }) {
+export function PopularDestinations({
+  destinations = [],
+  isLoading = false,
+}) {
   return (
     <section className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-8 flex items-end justify-between">
@@ -55,9 +58,10 @@ export function PopularDestinations({ destinations = [], isLoading = false }) {
       ) : destinations.length > 0 ? (
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
           {destinations.map((destination) => (
-            <div
+            <Link
               key={destination.city}
-              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              to={"/hotels?city=" + encodeURIComponent(destination.city)}
+              className="group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -74,7 +78,9 @@ export function PopularDestinations({ destinations = [], isLoading = false }) {
                 <div className="absolute bottom-4 left-4 text-white">
                   <div className="flex items-center gap-1.5">
                     <MapPin size={16} />
-                    <h3 className="font-semibold">{destination.city}</h3>
+                    <h3 className="font-semibold">
+                      {destination.city}
+                    </h3>
                   </div>
 
                   <p className="mt-1 text-sm text-white/80">
@@ -82,7 +88,7 @@ export function PopularDestinations({ destinations = [], isLoading = false }) {
                   </p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
@@ -96,7 +102,10 @@ export function PopularDestinations({ destinations = [], isLoading = false }) {
    2. FEATURED HOTELS
 ========================================================= */
 
-export function FeaturedHotels({ hotels = [], isLoading = false }) {
+export function FeaturedHotels({
+  hotels = [],
+  isLoading = false,
+}) {
   return (
     <section className="bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-16">
@@ -142,10 +151,11 @@ export function FeaturedHotels({ hotels = [], isLoading = false }) {
                 "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80";
 
               return (
-                <div
-                  key={hotel._id}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
+                <Link
+  key={hotel._id}
+  to={"/hotels/" + hotel.slug}
+  className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+>
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <img
                       src={primaryImage}
@@ -186,20 +196,24 @@ export function FeaturedHotels({ hotels = [], isLoading = false }) {
 
                     <div className="mt-5 flex items-end justify-between">
                       <div>
-                        <p className="text-xs text-slate-400">Giá từ</p>
+                        <p className="text-xs text-slate-400">
+                          Giá từ
+                        </p>
 
                         <p className="text-xl font-bold text-blue-600">
-                          {Number(hotel.priceFrom || 0).toLocaleString("vi-VN")}
+                          {Number(
+                            hotel.priceFrom || 0
+                          ).toLocaleString("vi-VN")}
                           ₫
                         </p>
                       </div>
 
-                      <button className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600">
+                      <span className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition group-hover:bg-blue-600">
                         Xem phòng
-                      </button>
+                      </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -215,7 +229,10 @@ export function FeaturedHotels({ hotels = [], isLoading = false }) {
    3. HOTEL TYPES
 ========================================================= */
 
-export function HotelTypes({ types = [], isLoading = false }) {
+export function HotelTypes({
+  types = [],
+  isLoading = false,
+}) {
   return (
     <section className="mx-auto max-w-7xl px-6 py-16">
       <div className="mb-8">
@@ -244,9 +261,10 @@ export function HotelTypes({ types = [], isLoading = false }) {
       ) : types.length > 0 ? (
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
           {types.map((type) => (
-            <div
+            <Link
               key={type.type}
-              className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
+              to={"/hotels?type=" + encodeURIComponent(type.type)}
+              className="group block cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
             >
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
                 <Building2 size={23} />
@@ -259,7 +277,7 @@ export function HotelTypes({ types = [], isLoading = false }) {
               <p className="mt-1 text-sm text-slate-400">
                 {type.hotelCount || 0} nơi lưu trú
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
@@ -273,7 +291,10 @@ export function HotelTypes({ types = [], isLoading = false }) {
    4. FEATURED DEALS
 ========================================================= */
 
-export function FeaturedDeals({ deals = [], isLoading = false }) {
+export function FeaturedDeals({
+  deals = [],
+  isLoading = false,
+}) {
   return (
     <section className="bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-16">
@@ -305,28 +326,29 @@ export function FeaturedDeals({ deals = [], isLoading = false }) {
             {deals.map((deal) => (
               <div
                 key={deal._id}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <Percent size={23} />
-                  </div>
+                  className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <Percent size={23} />
+                    </div>
 
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
-                    {deal.discountType === "PERCENTAGE"
-                      ? `-${deal.discountValue}%`
-                      : `-${Number(deal.discountValue || 0).toLocaleString(
-                          "vi-VN",
-                        )}₫`}
-                  </span>
-                </div>
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
+  {deal.discountType === "PERCENTAGE"
+    ? "-" + deal.discountValue + "%"
+    : "-" +
+      Number(deal.discountValue || 0).toLocaleString("vi-VN") +
+      "₫"}
+</span>
+                  </div>
 
                 <h3 className="mt-5 text-lg font-bold text-slate-900">
                   {deal.code}
                 </h3>
 
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
-                  {deal.description || "Ưu đãi đặc biệt dành cho khách hàng."}
+                  {deal.description ||
+                    "Ưu đãi đặc biệt dành cho khách hàng."}
                 </p>
 
                 <div className="mt-5 border-t border-slate-100 pt-4">
@@ -367,7 +389,8 @@ export function WhyChooseUs() {
     {
       icon: ShieldCheck,
       title: "Đặt phòng an tâm",
-      description: "Quy trình đặt phòng rõ ràng và an toàn cho mọi khách hàng.",
+      description:
+        "Quy trình đặt phòng rõ ràng và an toàn cho mọi khách hàng.",
     },
     {
       icon: Headphones,
@@ -407,7 +430,9 @@ export function WhyChooseUs() {
                 <Icon size={26} />
               </div>
 
-              <h3 className="mt-5 font-bold text-slate-900">{reason.title}</h3>
+              <h3 className="mt-5 font-bold text-slate-900">
+                {reason.title}
+              </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {reason.description}
