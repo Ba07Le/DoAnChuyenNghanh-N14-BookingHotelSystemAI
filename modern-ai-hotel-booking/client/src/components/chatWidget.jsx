@@ -4,9 +4,12 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./ChatWidget.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api"
+).replace(/\/+$/, "");
 
-const GREETING = "Xin chào! Mình có thể giúp bạn tìm khách sạn, phòng phù hợp và mã giảm giá. Bạn muốn đi đâu?";
+const GREETING =
+  "Xin chào! Mình có thể giúp bạn tìm khách sạn, phòng phù hợp và mã giảm giá. Bạn muốn đi đâu?";
 const SUGGESTIONS = [
   "Khách sạn yên tĩnh gần biển",
   "Phòng rẻ nhất ở Đà Lạt cho 2 người",
@@ -41,7 +44,7 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/chat`, {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,14 +56,21 @@ export default function ChatWidget() {
       const data = await res.json();
       setMessages([...next, { role: "assistant", content: data.reply }]);
     } catch {
-      setMessages([...next, { role: "assistant", content: "Xin lỗi, có lỗi xảy ra. Bạn thử lại nhé." }]);
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: "Xin lỗi, có lỗi xảy ra. Bạn thử lại nhé.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   // after ALL hooks: hide on admin/owner pages
-  if (pathname.startsWith("/admin") || pathname.startsWith("/owner")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/owner"))
+    return null;
 
   return (
     <>
@@ -68,7 +78,9 @@ export default function ChatWidget() {
         <div className="chat-panel">
           <div className="chat-header">
             <span>Trợ lý AI</span>
-            <button onClick={() => setOpen(false)} aria-label="Đóng">✕</button>
+            <button onClick={() => setOpen(false)} aria-label="Đóng">
+              ✕
+            </button>
           </div>
 
           <div className="chat-body">
@@ -77,13 +89,18 @@ export default function ChatWidget() {
             {messages.length === 0 && (
               <div className="chat-suggestions">
                 {SUGGESTIONS.map((s) => (
-                  <button key={s} onClick={() => send(s)}>{s}</button>
+                  <button key={s} onClick={() => send(s)}>
+                    {s}
+                  </button>
                 ))}
               </div>
             )}
 
             {messages.map((m, i) => (
-              <div key={i} className={`chat-msg ${m.role === "user" ? "user" : "bot"}`}>
+              <div
+                key={i}
+                className={`chat-msg ${m.role === "user" ? "user" : "bot"}`}
+              >
                 {m.role === "user" ? (
                   m.content
                 ) : (
@@ -92,9 +109,13 @@ export default function ChatWidget() {
                       // in-app links (e.g. /booking?...) navigate without a page reload
                       a: ({ href, children }) =>
                         href?.startsWith("/") ? (
-                          <Link to={href} onClick={() => setOpen(false)}>{children}</Link>
+                          <Link to={href} onClick={() => setOpen(false)}>
+                            {children}
+                          </Link>
                         ) : (
-                          <a href={href} target="_blank" rel="noreferrer">{children}</a>
+                          <a href={href} target="_blank" rel="noreferrer">
+                            {children}
+                          </a>
                         ),
                     }}
                   >
@@ -104,7 +125,9 @@ export default function ChatWidget() {
               </div>
             ))}
 
-            {loading && <div className="chat-msg bot typing">Đang trả lời...</div>}
+            {loading && (
+              <div className="chat-msg bot typing">Đang trả lời...</div>
+            )}
             <div ref={bottomRef} />
           </div>
 
@@ -121,12 +144,18 @@ export default function ChatWidget() {
               placeholder="Nhập câu hỏi..."
               disabled={loading}
             />
-            <button type="submit" disabled={loading || !input.trim()}>Gửi</button>
+            <button type="submit" disabled={loading || !input.trim()}>
+              Gửi
+            </button>
           </form>
         </div>
       )}
 
-      <button className="chat-fab" onClick={() => setOpen((o) => !o)} aria-label="Mở chat">
+      <button
+        className="chat-fab"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Mở chat"
+      >
         {open ? "✕" : "💬"}
       </button>
     </>

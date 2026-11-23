@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -6,6 +5,8 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
   CalendarDays,
   Users,
   Minus,
@@ -18,6 +19,9 @@ import Footer from "../components/Footer";
 import HotelCard from "../components/hotels/HotelCard";
 import FilterDrawer from "../components/filters/FilterDrawer";
 import { searchHotels } from "../api/hotelApi";
+import { getFilterOptions } from "../api/catalogApi";
+
+const HOTELS_PER_PAGE = 7;
 
 const EMPTY_FILTERS = {
   cities: [],
@@ -67,14 +71,10 @@ const filtersFromParams = (params) => ({
     .map((v) => v.trim())
     .filter(Boolean),
 
-  hotelTypes: (
-    params.get("hotelType") ||
-    params.get("type") ||
-    ""
-  )
+  hotelTypes: (params.get("hotelType") || params.get("type") || "")
     .split(",")
     .map((v) => v.trim().toUpperCase())
-    .filter((v) => Object.prototype.hasOwnProperty.call(TYPE_LABELS, v)),
+    .filter(Boolean),
 
   stars: (params.get("stars") || "")
     .split(",")
@@ -122,6 +122,7 @@ const writeFiltersToParams = (params, filters) => {
     }
   });
 
+  next.delete("page"); // Đổi bộ lọc luôn quay về trang đầu
   return next;
 };
 
@@ -129,29 +130,35 @@ function Hotels() {
   const [params, setParams] = useSearchParams();
 
   const queryString = params.toString();
+  // Chuyển trang chỉ thay phần hiển thị; không gọi lại API tìm kiếm.
+  const searchQueryString = useMemo(() => {
+    const query = new URLSearchParams(queryString);
+    query.delete("page");
+    return query.toString();
+  }, [queryString]);
 
-  const [search, setSearch] = useState(
-    params.get("destination") || ""
-  );
+  const requestedPage = Number(params.get("page"));
+  const page =
+    Number.isSafeInteger(requestedPage) && requestedPage > 0
+      ? requestedPage
+      : 1;
 
-  const [checkIn, setCheckIn] = useState(
-    params.get("checkIn") || ""
-  );
+  const [search, setSearch] = useState(params.get("destination") || "");
 
-  const [checkOut, setCheckOut] = useState(
-    params.get("checkOut") || ""
-  );
+  const [checkIn, setCheckIn] = useState(params.get("checkIn") || "");
+
+  const [checkOut, setCheckOut] = useState(params.get("checkOut") || "");
 
   const [adults, setAdults] = useState(
-    Math.max(1, Number(params.get("adults")) || 2)
+    Math.max(1, Number(params.get("adults")) || 2),
   );
 
   const [children, setChildren] = useState(
-    Math.max(0, Number(params.get("children")) || 0)
+    Math.max(0, Number(params.get("children")) || 0),
   );
 
   const [rooms, setRooms] = useState(
-    Math.max(1, Number(params.get("rooms")) || 1)
+    Math.max(1, Number(params.get("rooms")) || 1),
   );
 
   const [openGuests, setOpenGuests] = useState(false);
@@ -164,10 +171,31 @@ function Hotels() {
   const [error, setError] = useState("");
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterLabels, setFilterLabels] = useState({
+    cities: {},
+    hotelTypes: {},
+    amenities: {},
+  });
+  useEffect(() => {
+    getFilterOptions()
+      .then((r) => {
+        if (!r.success) return;
+        setFilterLabels({
+          cities: Object.fromEntries(
+            (r.data?.destinations || []).map((x) => [x.value, x.label]),
+          ),
+          hotelTypes: Object.fromEntries(
+            (r.data?.hotelTypes || []).map((x) => [x.value, x.label]),
+          ),
+          amenities: Object.fromEntries(
+            (r.data?.amenities || []).map((x) => [x.value, x.label]),
+          ),
+        });
+      })
+      .catch(() => {});
+  }, [isFilterOpen]);
 
-  const [filters, setFilters] = useState(() =>
-    filtersFromParams(params)
-  );
+  const [filters, setFilters] = useState(() => filtersFromParams(params));
 
   const [refreshCount, setRefreshCount] = useState(0);
 
@@ -176,30 +204,24 @@ function Hotels() {
   // ==========================================
 
   useEffect(() => {
-    const p = new URLSearchParams(queryString);
+    const p = new URLSearchParams(searchQueryString);
 
     setSearch(p.get("destination") || "");
     setCheckIn(p.get("checkIn") || "");
     setCheckOut(p.get("checkOut") || "");
 
-    setAdults(
-      Math.max(1, Number(p.get("adults")) || 2)
-    );
+    setAdults(Math.max(1, Number(p.get("adults")) || 2));
 
-    setChildren(
-      Math.max(0, Number(p.get("children")) || 0)
-    );
+    setChildren(Math.max(0, Number(p.get("children")) || 0));
 
-    setRooms(
-      Math.max(1, Number(p.get("rooms")) || 1)
-    );
+    setRooms(Math.max(1, Number(p.get("rooms")) || 1));
 
     // Khôi phục bộ lọc khi truy cập URL,
     // tải lại trang hoặc Back / Forward.
     setFilters(filtersFromParams(p));
 
     setDateError("");
-  }, [queryString]);
+  }, [searchQueryString]);
 
   // ==========================================
   // 2. GỌI API TÌM KIẾM KHÁCH SẠN
@@ -208,10 +230,11 @@ function Hotels() {
   useEffect(() => {
     let cancelled = false;
 
-    const p = new URLSearchParams(queryString);
+    const p = new URLSearchParams(searchQueryString);
 
     const request = {
       destination: p.get("destination") || "",
+      destinationId: p.get("destinationId") || undefined,
 
       ...(p.get("checkIn") && p.get("checkOut")
         ? {
@@ -233,9 +256,7 @@ function Hotels() {
     searchHotels(request)
       .then((r) => {
         if (!cancelled) {
-          setHotels(
-            r.success ? r.data || [] : []
-          );
+          setHotels(r.success ? r.data || [] : []);
         }
       })
       .catch((e) => {
@@ -243,8 +264,7 @@ function Hotels() {
           setHotels([]);
 
           setError(
-            e.response?.data?.message ||
-              "Không thể tải danh sách khách sạn."
+            e.response?.data?.message || "Không thể tải danh sách khách sạn.",
           );
         }
       })
@@ -257,21 +277,15 @@ function Hotels() {
     return () => {
       cancelled = true;
     };
-  }, [queryString, filters, refreshCount]);
+  }, [searchQueryString, filters, refreshCount]);
 
   // ==========================================
   // 3. TÌM KIẾM
   // ==========================================
 
   const handleSearch = () => {
-    if (
-      checkIn &&
-      checkOut &&
-      checkOut <= checkIn
-    ) {
-      setDateError(
-        "Ngày trả phòng phải sau ngày nhận phòng."
-      );
+    if (checkIn && checkOut && checkOut <= checkIn) {
+      setDateError("Ngày trả phòng phải sau ngày nhận phòng.");
       return;
     }
 
@@ -280,8 +294,11 @@ function Hotels() {
 
     const next = new URLSearchParams(params);
 
+    next.delete("page");
+
     // Cập nhật điểm đến
     next.delete("destination");
+    next.delete("destinationId");
 
     if (search.trim()) {
       next.set("destination", search.trim());
@@ -314,10 +331,7 @@ function Hotels() {
     }
 
     // Giữ nguyên bộ lọc đang chọn
-    const updated = writeFiltersToParams(
-      next,
-      filters
-    );
+    const updated = writeFiltersToParams(next, filters);
 
     if (updated.toString() === queryString) {
       setRefreshCount((n) => n + 1);
@@ -334,26 +348,62 @@ function Hotels() {
     const x = [...hotels];
 
     if (sort === "priceLow") {
-      x.sort(
-        (a, b) => a.priceFrom - b.priceFrom
-      );
+      x.sort((a, b) => a.priceFrom - b.priceFrom);
     }
 
     if (sort === "priceHigh") {
-      x.sort(
-        (a, b) => b.priceFrom - a.priceFrom
-      );
+      x.sort((a, b) => b.priceFrom - a.priceFrom);
     }
 
     if (sort === "rating") {
-      x.sort(
-        (a, b) =>
-          b.averageRating - a.averageRating
-      );
+      x.sort((a, b) => b.averageRating - a.averageRating);
     }
 
     return x;
   }, [hotels, sort]);
+
+  // ==========================================
+  // 4A. PHÂN TRANG (7 KHÁCH SẠN / TRANG)
+  // ==========================================
+
+  const totalPages = Math.ceil(visible.length / HOTELS_PER_PAGE);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
+  const pageHotels = useMemo(() => {
+    const start = (currentPage - 1) * HOTELS_PER_PAGE;
+    return visible.slice(start, start + HOTELS_PER_PAGE);
+  }, [visible, currentPage]);
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 3) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+    // Giữ trang đầu, trang cuối và các trang sát trang đang xem.
+    // Ví dụ trang 1/5: 1 2 … 5.
+    const pages = new Set([1, totalPages]);
+    for (let n = currentPage - 1; n <= currentPage + 1; n++) {
+      if (n >= 1 && n <= totalPages) pages.add(n);
+    }
+    const ordered = [...pages].sort((a, b) => a - b);
+    const result = [];
+    ordered.forEach((n, index) => {
+      if (index && n - ordered[index - 1] > 1) result.push("...");
+      result.push(n);
+    });
+    return result;
+  }, [totalPages, currentPage]);
+
+  const changePage = (nextPage) => {
+    if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage)
+      return;
+    const next = new URLSearchParams(params);
+    if (nextPage === 1) next.delete("page");
+    else next.set("page", String(nextPage));
+    setParams(next);
+    document.getElementById("hotel-results")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
 
   // ==========================================
   // 5. ÁP DỤNG BỘ LỌC
@@ -368,10 +418,7 @@ function Hotels() {
     setFilters(updatedFilters);
 
     // Đồng bộ bộ lọc vào URL
-    const updatedParams = writeFiltersToParams(
-      params,
-      updatedFilters
-    );
+    const updatedParams = writeFiltersToParams(params, updatedFilters);
 
     setParams(updatedParams);
 
@@ -392,9 +439,7 @@ function Hotels() {
 
     setFilters(updated);
 
-    setParams(
-      writeFiltersToParams(params, updated)
-    );
+    setParams(writeFiltersToParams(params, updated));
   };
 
   // ==========================================
@@ -405,13 +450,13 @@ function Hotels() {
     ...filters.cities.map((v) => ({
       key: "cities",
       value: v,
-      label: v,
+      label: filterLabels.cities[v] || v,
     })),
 
     ...filters.hotelTypes.map((v) => ({
       key: "hotelTypes",
       value: v,
-      label: TYPE_LABELS[v] || v,
+      label: filterLabels.hotelTypes[v] || TYPE_LABELS[v] || v,
     })),
 
     ...filters.stars.map((v) => ({
@@ -435,9 +480,9 @@ function Hotels() {
           {
             key: "minPrice",
             value: filters.minPrice,
-            label: `Giá từ ${Number(
-              filters.minPrice
-            ).toLocaleString("vi-VN")}đ`,
+            label: `Giá từ ${Number(filters.minPrice).toLocaleString(
+              "vi-VN",
+            )}đ`,
           },
         ]
       : []),
@@ -447,9 +492,9 @@ function Hotels() {
           {
             key: "maxPrice",
             value: filters.maxPrice,
-            label: `Giá đến ${Number(
-              filters.maxPrice
-            ).toLocaleString("vi-VN")}đ`,
+            label: `Giá đến ${Number(filters.maxPrice).toLocaleString(
+              "vi-VN",
+            )}đ`,
           },
         ]
       : []),
@@ -463,7 +508,7 @@ function Hotels() {
     ...filters.amenities.map((v) => ({
       key: "amenities",
       value: v,
-      label: AMENITY_LABELS[v] || v,
+      label: filterLabels.amenities[v] || AMENITY_LABELS[v] || v,
     })),
   ];
 
@@ -479,27 +524,17 @@ function Hotels() {
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
-
             {/* Điểm đến */}
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-              <MapPin
-                size={19}
-                className="text-blue-600"
-              />
+              <MapPin size={19} className="text-blue-600" />
 
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-slate-400">
-                  Điểm đến
-                </p>
+                <p className="text-xs font-medium text-slate-400">Điểm đến</p>
 
                 <input
                   value={search}
-                  onChange={(e) =>
-                    setSearch(e.target.value)
-                  }
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleSearch()
-                  }
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   placeholder="Bạn muốn đi đâu?"
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
                 />
@@ -508,10 +543,7 @@ function Hotels() {
 
             {/* Ngày nhận và trả phòng */}
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-              <CalendarDays
-                size={19}
-                className="shrink-0 text-blue-600"
-              />
+              <CalendarDays size={19} className="shrink-0 text-blue-600" />
 
               <label className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-slate-400">
@@ -526,11 +558,7 @@ function Hotels() {
 
                     setCheckIn(value);
 
-                    if (
-                      checkOut &&
-                      value &&
-                      checkOut <= value
-                    ) {
+                    if (checkOut && value && checkOut <= value) {
                       setCheckOut("");
                     }
 
@@ -564,15 +592,10 @@ function Hotels() {
             <div className="relative shrink-0">
               <button
                 type="button"
-                onClick={() =>
-                  setOpenGuests((v) => !v)
-                }
+                onClick={() => setOpenGuests((v) => !v)}
                 className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
               >
-                <Users
-                  size={19}
-                  className="text-blue-600"
-                />
+                <Users size={19} className="text-blue-600" />
 
                 <span>
                   <span className="block text-xs font-medium text-slate-400">
@@ -584,10 +607,7 @@ function Hotels() {
                   </span>
                 </span>
 
-                <ChevronDown
-                  size={16}
-                  className="text-slate-400"
-                />
+                <ChevronDown size={16} className="text-slate-400" />
               </button>
 
               {openGuests && (
@@ -626,9 +646,7 @@ function Hotels() {
                           aria-label={`Giảm ${item.label}`}
                           disabled={item.value <= item.min}
                           onClick={() =>
-                            item.set((n) =>
-                              Math.max(item.min, n - 1)
-                            )
+                            item.set((n) => Math.max(item.min, n - 1))
                           }
                           className="rounded-full border border-slate-200 p-2 disabled:opacity-30"
                         >
@@ -642,9 +660,7 @@ function Hotels() {
                         <button
                           type="button"
                           aria-label={`Tăng ${item.label}`}
-                          onClick={() =>
-                            item.set((n) => n + 1)
-                          }
+                          onClick={() => item.set((n) => n + 1)}
                           className="rounded-full border border-slate-200 p-2"
                         >
                           <Plus size={14} />
@@ -684,15 +700,15 @@ function Hotels() {
       </section>
 
       {/* DANH SÁCH KHÁCH SẠN */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
-
+      <main
+        id="hotel-results"
+        className="mx-auto max-w-7xl scroll-mt-24 px-6 py-8"
+      >
         {/* Breadcrumb */}
         <div className="mb-5 text-sm text-slate-400">
           Trang chủ
           <span className="mx-2">/</span>
-          <span className="font-medium text-slate-600">
-            Khách sạn
-          </span>
+          <span className="font-medium text-slate-600">Khách sạn</span>
         </div>
 
         {/* Tiêu đề và sắp xếp */}
@@ -710,32 +726,25 @@ function Hotels() {
           </div>
 
           <div className="relative flex items-center gap-2">
-            <span className="text-sm text-slate-500">
-              Sắp xếp:
-            </span>
+            <span className="text-sm text-slate-500">Sắp xếp:</span>
 
             <select
               value={sort}
-              onChange={(e) =>
-                setSort(e.target.value)
-              }
+              onChange={(e) => {
+                setSort(e.target.value);
+                const next = new URLSearchParams(params);
+                next.delete("page");
+                setParams(next);
+              }}
               className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-9 text-sm font-medium text-slate-700 outline-none"
             >
-              <option value="recommended">
-                Đề xuất
-              </option>
+              <option value="recommended">Đề xuất</option>
 
-              <option value="rating">
-                Đánh giá cao
-              </option>
+              <option value="rating">Đánh giá cao</option>
 
-              <option value="priceLow">
-                Giá thấp
-              </option>
+              <option value="priceLow">Giá thấp</option>
 
-              <option value="priceHigh">
-                Giá cao
-              </option>
+              <option value="priceHigh">Giá cao</option>
             </select>
 
             <ChevronDown
@@ -760,9 +769,7 @@ function Hotels() {
             <button
               key={`${chip.key}:${chip.value}`}
               type="button"
-              onClick={() =>
-                removeFilter(chip.key, chip.value)
-              }
+              onClick={() => removeFilter(chip.key, chip.value)}
               aria-label={`Bỏ lọc ${chip.label}`}
               className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"
             >
@@ -791,7 +798,7 @@ function Hotels() {
           </div>
         ) : visible.length ? (
           <div className="space-y-5">
-            {visible.map((h) => (
+            {pageHotels.map((h) => (
               <HotelCard
                 key={h._id}
                 searchParams={queryString}
@@ -800,9 +807,7 @@ function Hotels() {
                   id: h._id,
 
                   image:
-                    h.images?.find(
-                      (x) => x.isPrimary
-                    )?.url ||
+                    h.images?.find((x) => x.isPrimary)?.url ||
                     h.images?.[0]?.url,
 
                   stars: h.starRating,
@@ -815,6 +820,69 @@ function Hotels() {
                 }}
               />
             ))}
+            {totalPages > 1 && (
+              <nav
+                aria-label="Phân trang khách sạn"
+                className="mt-10 flex flex-col items-center gap-4 border-t border-slate-200 pt-8"
+              >
+                <p className="text-sm text-slate-500" aria-live="polite">
+                  Hiển thị {(currentPage - 1) * HOTELS_PER_PAGE + 1}–
+                  {Math.min(currentPage * HOTELS_PER_PAGE, visible.length)}{" "}
+                  trong {visible.length} khách sạn
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => changePage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="Trang trước"
+                    className="inline-flex h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronsLeft size={17} /> Trước
+                  </button>
+                  {pageNumbers.map((number, index) =>
+                    number === "..." ? (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="flex h-10 w-7 items-center justify-center text-slate-400"
+                        aria-hidden="true"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={number}
+                        type="button"
+                        onClick={() => changePage(number)}
+                        aria-label={`Trang ${number}`}
+                        aria-current={
+                          number === currentPage ? "page" : undefined
+                        }
+                        className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition ${
+                          number === currentPage
+                            ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-600"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    ),
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => changePage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Trang sau"
+                    className="inline-flex h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Sau <ChevronsRight size={17} />
+                  </button>
+                </div>
+                <span className="text-xs text-slate-400">
+                  Trang {currentPage} / {totalPages}
+                </span>
+              </nav>
+            )}
           </div>
         ) : (
           <div className="rounded-2xl bg-white p-12 text-center text-slate-500">

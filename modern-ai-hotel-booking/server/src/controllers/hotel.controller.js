@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import mongoose from "mongoose";
 import Hotel from "../models/Hotel.js";
 import RoomType from "../models/RoomType.js";
 import Inventory from "../models/Inventory.js";
@@ -52,6 +53,7 @@ export const searchHotels = async (req, res) => {
   try {
     const {
       destination = "",
+      destinationId,
       checkIn,
       checkOut,
       adults = 1,
@@ -112,7 +114,11 @@ export const searchHotels = async (req, res) => {
       }
     }
     const filter = { status: "APPROVED" };
-    if (String(destination).trim()) {
+    if (destinationId) {
+      if (!mongoose.isValidObjectId(destinationId)) return res.status(400).json({ success: false, message: "ID điểm đến không hợp lệ." });
+      filter.destinationId = new mongoose.Types.ObjectId(destinationId);
+    }
+    if (!destinationId && String(destination).trim()) {
       const d = safeRegex(String(destination).trim());
       filter.$or = [
         { name: { $regex: d, $options: "i" } },
@@ -121,7 +127,14 @@ export const searchHotels = async (req, res) => {
       ];
     }
     const types = splitValues(hotelType);
-    if (types.length) filter.hotelType = { $in: types };
+    if (types.length) {
+      const typeIds = types.filter((v) => mongoose.isValidObjectId(v));
+      const legacyCodes = types.filter((v) => !mongoose.isValidObjectId(v));
+      const typeConditions = [];
+      if (typeIds.length) typeConditions.push({ hotelTypeId: { $in: typeIds } });
+      if (legacyCodes.length) typeConditions.push({ hotelType: { $in: legacyCodes } });
+      filter.$and = [...(filter.$and || []), { $or: typeConditions }];
+    }
     const selectedStars = splitValues(stars)
       .map(Number)
       .filter((n) => Number.isInteger(n) && n >= 1 && n <= 5);
@@ -141,20 +154,10 @@ export const searchHotels = async (req, res) => {
       hotels = hotels.filter((h) =>
         selectedCities.some(
           (city) =>
+            (mongoose.isValidObjectId(city) && String(h.destinationId?._id || "") === city) ||
             cityMatches(h.address?.city, city) ||
             cityMatches(h.address?.district, city) ||
             cityMatches(h.destinationId?.name, city),
-        ),
-      );
-    }
-    if (selectedAmenities.length) {
-      hotels = hotels.filter((h) =>
-        selectedAmenities.every((requested) =>
-          (h.amenities || []).some(
-            (a) =>
-              amenityMatches(a.name, requested) ||
-              amenityMatches(a.slug, requested),
-          ),
         ),
       );
     }
@@ -175,6 +178,7 @@ export const searchHotels = async (req, res) => {
       ...(selectedBeds.length ? { bedType: { $in: selectedBeds } } : {}),
     };
     const roomList = await RoomType.find(roomFilter)
+      .populate("amenities", "name slug")
       .sort({ basePrice: 1 })
       .lean();
     const byHotel = new Map();
@@ -204,13 +208,18 @@ export const searchHotels = async (req, res) => {
         const candidates = byHotel.get(String(hotel._id)) || [];
         const room = candidates.find(
           (candidate) =>
-            !inventoryMap ||
+            selectedAmenities.every((requested) =>
+              [...(hotel.amenities || []), ...(candidate.amenities || [])].some(
+                (a) => amenityMatches(a.name, requested) || amenityMatches(a.slug, requested),
+              ),
+            ) &&
+            (!inventoryMap ||
             dates.every((d) => {
               const entry = inventoryMap.get(
                 `${candidate._id}-${d.toISOString().slice(0, 10)}`,
               );
               return entry && entry.availableRooms >= roomQuantity;
-            }),
+            })),
         );
         if (!room) return null;
         return {

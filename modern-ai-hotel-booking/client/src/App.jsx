@@ -13,6 +13,8 @@ import Profile from "./pages/Profile";
 import Hotels from "./pages/Hotels";
 import Offers from "./pages/Offers";
 import Destinations from "./pages/Destinations";
+import DestinationDetails from "./pages/DestinationDetails";
+import AdminDestinations from "./pages/admin/AdminDestinations";
 import HotelDetails from "./pages/HotelDetails";
 import Booking from "./pages/Booking";
 import Bookings from "./pages/Bookings";
@@ -51,6 +53,7 @@ function App() {
       <Route path="/hotels" element={<Hotels />} />
       <Route path="/hotels/:slug" element={<HotelDetails />} />
       <Route path="/destinations" element={<Destinations />} />
+      <Route path="/destinations/:slug" element={<DestinationDetails />} />
       <Route path="/offers" element={<Offers />} />
 
       {/* AUTH */}
@@ -92,6 +95,7 @@ function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="hotels" element={<AdminHotels />} />
+        <Route path="destinations" element={<AdminDestinations />} />
         <Route path="bookings" element={<AdminBookings />} />
         <Route path="coupons" element={<AdminCoupons />} />
         <Route path="audit-logs" element={<AdminAuditLogs />} />

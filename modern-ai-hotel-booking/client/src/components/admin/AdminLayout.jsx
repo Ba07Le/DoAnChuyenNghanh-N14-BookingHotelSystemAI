@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Building2, CalendarCheck, Ticket, ScrollText, Home, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Building2, CalendarCheck, Ticket, ScrollText, Home, LogOut, MapPin } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { usePendingHotelCount } from "../../hooks/useAdmin";
 
@@ -7,6 +7,7 @@ const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/users", label: "Người dùng", icon: Users },
   { to: "/admin/hotels", label: "Khách sạn", icon: Building2, badge: "pendingHotels" },
+  { to: "/admin/destinations", label: "Điểm đến", icon: MapPin },
   { to: "/admin/bookings", label: "Đặt phòng", icon: CalendarCheck },
   { to: "/admin/coupons", label: "Mã giảm giá", icon: Ticket },
   { to: "/admin/audit-logs", label: "Nhật ký", icon: ScrollText },

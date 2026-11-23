@@ -6,14 +6,31 @@ import {
   MapPin,
   Building2,
   BedDouble,
-  Wifi,
-  Wind,
-  Tv,
-  Bath,
   RotateCcw,
 } from "lucide-react";
+import { getFilterOptions } from "../../api/catalogApi";
 
 const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
+  const [options, setOptions] = useState({ destinations: [], hotelTypes: [], bedTypes: [], amenities: [] });
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsError, setOptionsError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    setOptionsLoading(true);
+    setOptionsError("");
+    getFilterOptions()
+      .then((response) => {
+        if (!active) return;
+        if (!response.success || !response.data) throw new Error("Dữ liệu bộ lọc không hợp lệ");
+        setOptions(response.data);
+      })
+      .catch(() => { if (active) setOptionsError("Không thể tải danh mục bộ lọc. Vui lòng thử mở lại."); })
+      .finally(() => { if (active) setOptionsLoading(false); });
+    return () => { active = false; };
+  }, [isOpen]);
+
   const [filters, setFilters] = useState({
     cities: [],
     hotelTypes: [],
@@ -151,22 +168,17 @@ const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
 
         {/* Content */}
         <div className="h-[calc(100%-148px)] overflow-y-auto px-6 py-6">
+          {optionsLoading && <p className="text-sm text-slate-500">Đang cập nhật dữ liệu bộ lọc...</p>}
+          {optionsError && <p role="alert" className="text-sm text-red-600">{optionsError}</p>}
           {/* Điểm đến */}
           <FilterSection icon={<MapPin size={17} />} title="Điểm đến">
             <div className="space-y-3">
-              {[
-                "Hà Nội",
-                "Đà Nẵng",
-                "Nha Trang",
-                "TP. Hồ Chí Minh",
-                "Phú Quốc",
-                "Hội An",
-              ].map((city) => (
+              {(options.destinations || []).map((item) => (
                 <CheckboxItem
-                  key={city}
-                  label={city}
-                  checked={filters.cities.includes(city)}
-                  onChange={() => toggleArrayValue("cities", city)}
+                  key={item.id || item.value}
+                  label={item.label}
+                  checked={filters.cities.includes(item.value)}
+                  onChange={() => toggleArrayValue("cities", item.value)}
                 />
               ))}
             </div>
@@ -180,32 +192,7 @@ const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
             title="Loại hình lưu trú"
           >
             <div className="space-y-3">
-              {[
-                {
-                  value: "HOTEL",
-                  label: "Khách sạn",
-                },
-                {
-                  value: "RESORT",
-                  label: "Resort",
-                },
-                {
-                  value: "VILLA",
-                  label: "Villa",
-                },
-                {
-                  value: "APARTMENT",
-                  label: "Căn hộ",
-                },
-                {
-                  value: "HOMESTAY",
-                  label: "Homestay",
-                },
-                {
-                  value: "BOUTIQUE",
-                  label: "Boutique Hotel",
-                },
-              ].map((type) => (
+              {(options.hotelTypes || []).map((type) => (
                 <CheckboxItem
                   key={type.value}
                   label={type.label}
@@ -340,51 +327,28 @@ const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
           {/* Bed */}
           <FilterSection icon={<BedDouble size={17} />} title="Loại giường">
             <div className="space-y-3">
-              {["1 King Bed", "2 Twin Beds", "1 King Bed + Sofa Bed"].map(
-                (bed) => (
-                  <CheckboxItem
-                    key={bed}
-                    label={bed}
-                    checked={filters.bedTypes.includes(bed)}
-                    onChange={() => toggleArrayValue("bedTypes", bed)}
-                  />
-                ),
-              )}
+              {(options.bedTypes || []).map((bed) => (
+                <CheckboxItem
+                  key={bed.value}
+                  label={bed.label}
+                  checked={filters.bedTypes.includes(bed.value)}
+                  onChange={() => toggleArrayValue("bedTypes", bed.value)}
+                />
+              ))}
             </div>
           </FilterSection>
 
           {/* Amenities */}
           <FilterSection title="Tiện nghi">
             <div className="space-y-3">
-              <AmenityItem
-                icon={<Wifi size={16} />}
-                label="Wi-Fi"
-                checked={filters.amenities.includes("wifi")}
-                onChange={() => toggleArrayValue("amenities", "wifi")}
-              />
-
-              <AmenityItem
-                icon={<Wind size={16} />}
-                label="Máy lạnh"
-                checked={filters.amenities.includes("air-conditioning")}
-                onChange={() =>
-                  toggleArrayValue("amenities", "air-conditioning")
-                }
-              />
-
-              <AmenityItem
-                icon={<Tv size={16} />}
-                label="Smart TV"
-                checked={filters.amenities.includes("smart-tv")}
-                onChange={() => toggleArrayValue("amenities", "smart-tv")}
-              />
-
-              <AmenityItem
-                icon={<Bath size={16} />}
-                label="Bồn tắm"
-                checked={filters.amenities.includes("bathtub")}
-                onChange={() => toggleArrayValue("amenities", "bathtub")}
-              />
+              {(options.amenities || []).map((amenity) => (
+                <CheckboxItem
+                  key={amenity.value}
+                  label={amenity.label}
+                  checked={filters.amenities.includes(amenity.value)}
+                  onChange={() => toggleArrayValue("amenities", amenity.value)}
+                />
+              ))}
             </div>
           </FilterSection>
         </div>
@@ -481,34 +445,6 @@ const CheckboxItem = ({ label, checked, onChange, children }) => (
     />
 
     {children || <span>{label}</span>}
-  </label>
-);
-
-const AmenityItem = ({ icon, label, checked, onChange }) => (
-  <label
-    className="
-    flex cursor-pointer
-    items-center gap-3
-    text-sm text-slate-600
-  "
-  >
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      className="
-        h-4 w-4
-        rounded
-        border-slate-300
-        accent-slate-900
-      "
-    />
-
-    <span className="flex items-center gap-2">
-      <span className="text-slate-400">{icon}</span>
-
-      {label}
-    </span>
   </label>
 );
 

@@ -17,6 +17,7 @@ import chatRoutes from "./routes/chat.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import hotelRoutes from "./routes/hotel.routes.js";
 import homepageRoutes from "./routes/homepage.routes.js";
+import destinationRoutes, { adminDestinationRouter } from "./routes/destination.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -83,6 +84,8 @@ app.get("/api/health", (req, res) => {
 // API hiện tại
 app.use("/api/auth", authRoutes);
 app.use("/api/homepage", homepageRoutes);
+app.use("/api/destinations", destinationRoutes);
+app.use("/api/admin/destinations", adminDestinationRouter);
 app.use("/api/hotels", hotelRoutes);
 app.use("/api", catalogRoutes);
 app.use("/api/bookings", bookingRoutes);

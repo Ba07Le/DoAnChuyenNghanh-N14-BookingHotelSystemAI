@@ -52,6 +52,13 @@ const destinationSchema = new mongoose.Schema(
       trim: true,
     },
 
+    highlights: { type: String, default: "" },
+    activities: { type: String, default: "" },
+    cuisine: { type: String, default: "" },
+    travelTips: { type: String, default: "" },
+    bestTime: { type: String, default: "" },
+    gallery: [{ type: String }],
+
     hotelCount: {
       type: Number,
       default: 0,

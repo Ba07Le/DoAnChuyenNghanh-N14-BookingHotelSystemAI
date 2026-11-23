@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../middleware/auth.js';
+import * as destination from '../controllers/destination.controller.js';
+const router = Router();
+router.get('/', destination.list);
+router.get('/:slug', destination.detail);
+export default router;
+export const adminDestinationRouter = Router();
+adminDestinationRouter.use(authenticate, authorize('ADMIN'));
+adminDestinationRouter.get('/', destination.adminList);
+adminDestinationRouter.post('/', destination.create);
+adminDestinationRouter.patch('/:id', destination.update);
+adminDestinationRouter.delete('/:id', destination.remove);
