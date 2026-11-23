@@ -1,9 +1,13 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
 import { chat } from "../services/chatService.js";
 
 const router = Router();
+
+// protects the OpenAI bill: 15 requests per minute per IP
+const chatLimiter = rateLimit({ windowMs: 60_000, max: 15 });
 
 // Guests allowed: a valid token adds the user, anything else is treated as a guest
 const optionalAuth = async (req, _res, next) => {
@@ -21,10 +25,11 @@ const optionalAuth = async (req, _res, next) => {
   next();
 };
 
-router.post("/", optionalAuth, async (req, res) => {
+router.post("/", chatLimiter, optionalAuth, async (req, res) => {
   try {
     const history = (req.body.messages || [])
       .filter((m) => ["user", "assistant"].includes(m.role) && typeof m.content === "string")
+      .map((m) => ({ role: m.role, content: m.content.slice(0, 1000) }))
       .slice(-10);
     const reply = await chat(history, req.user?._id);
     res.json({ reply });
