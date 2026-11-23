@@ -7,7 +7,7 @@ import User from "../models/User.js";
 import Wishlist from "../models/Wishlist.js";
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
-import "../models/Amenity.js"; // registers the model for populate("amenities")
+import Amenity from "../models/Amenity.js";
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -38,7 +38,29 @@ async function resolveHotelId(hotelId, hotelName) {
   const h = await Hotel.findOne({ status: "APPROVED", name: new RegExp(esc(hotelName), "i") }).select("_id").lean();
   return h?._id ?? null;
 }
+// words the model might use -> patterns that match your amenity names
+const AMENITY_ALIASES = {
+  wifi: "wi-?fi", "wi-fi": "wi-?fi",
+  pool: "hồ bơi|pool", "swimming pool": "hồ bơi|pool",
+  gym: "gym|fitness|thể dục",
+  breakfast: "bữa sáng|ăn sáng|breakfast",
+  parking: "đỗ xe|bãi xe|parking",
+  "air conditioning": "điều hòa|máy lạnh|air",
+  restaurant: "nhà hàng|restaurant",
+  shuttle: "đưa đón|shuttle",
+};
 
+// one condition per requested amenity: the hotel must have ALL of them
+async function amenityConditions(names = []) {
+  const conds = [];
+  for (const name of names) {
+    const t = String(name).trim();
+    const rx = new RegExp(AMENITY_ALIASES[t.toLowerCase()] ?? esc(t), "i");
+    const ids = await Amenity.distinct("_id", { $or: [{ name: rx }, { slug: rx }] });
+    conds.push({ amenities: { $in: ids } }); // no match -> no hotel passes
+  }
+  return conds;
+}
 // Relative link to the existing booking page (the page itself re-checks price and availability)
 const bookingLink = ({ hotelId, roomTypeId, checkIn, checkOut, rooms, adults, children }) => {
   const p = new URLSearchParams({ hotelId: String(hotelId), roomTypeId: String(roomTypeId) });
@@ -66,6 +88,7 @@ const shape = (h, prices) => ({
   district: h.address?.district,
   fromPrice: prices[String(h._id)] ?? null,
   summary: (h.description || "").slice(0, 200),
+  amenities: (h.amenities || []).map((a) => a.name).filter(Boolean),
   ...(h.score !== undefined && { score: Number(h.score.toFixed(3)) }),
 });
 
@@ -74,6 +97,7 @@ const systemPrompt = (loggedIn) => `Bạn là trợ lý đặt phòng khách s�
 Hôm nay là ${dayKey(new Date())} (giờ Việt Nam).
 - Luôn dùng công cụ để lấy dữ liệu thật. Không bịa khách sạn, giá, phòng hay mã giảm giá.
 - Với yêu cầu mơ hồ (yên tĩnh, lãng mạn, gần biển...) dùng semantic_search_hotels. Với bộ lọc rõ ràng (thành phố, giá, số khách) dùng search_hotels / find_rooms.
+- Khi khách hỏi khách sạn CÓ tiện nghi cụ thể (hồ bơi, spa, gym...), dùng search_hotels với amenities. Khi hỏi về một khách sạn cụ thể (tiện nghi, chính sách, loại phòng), dùng get_hotel_details. Không đoán tiện nghi: chỉ nói những gì công cụ trả về. Nếu công cụ có trả link, ghi tên khách sạn dạng link markdown [Tên](link).
 - Khi khách hỏi phòng theo ngày, dùng check_availability với ngày dạng YYYY-MM-DD. Thiếu ngày nhận/trả phòng thì hỏi lại. Khách không nói năm thì dùng năm gần nhất trong tương lai.
 - Giá là VND/đêm (giá cơ bản). Tổng tiền = giá × số đêm × số phòng, chưa áp mã giảm giá.
 - Tên thành phố nên viết tiếng Việt có dấu (vd: Đà Nẵng).
@@ -108,18 +132,20 @@ const handlers = {
       },
       {
         $project: {
-          name: 1, starRating: 1, hotelType: 1, averageRating: 1, description: 1,
+          name: 1, starRating: 1, hotelType: 1, averageRating: 1, description: 1, amenities: 1,
           "address.city": 1, "address.district": 1,
           score: { $meta: "vectorSearchScore" },
         },
       },
     ]);
+    
+    await Hotel.populate(hotels, { path: "amenities", select: "name" });
     const good = hotels.filter((h) => h.score > 0.5);
     const prices = await fromPrices(good.map((h) => h._id));
     return good.map((h) => shape(h, prices));
   },
 
-  async search_hotels({ city, minStars, hotelType, minPrice, maxPrice, guests, limit = 5 }) {
+    async search_hotels({ city, minStars, hotelType, minPrice, maxPrice, guests, amenities, limit = 5 }) {
     const q = { status: "APPROVED" };
     if (city) {
       const rx = new RegExp(esc(city), "i");
@@ -133,7 +159,9 @@ const handlers = {
     }
     if (minStars) q.starRating = { $gte: minStars };
     if (hotelType) q.hotelType = hotelType;
-
+    if (amenities?.length) {
+      q.$and = [...(q.$and || []), ...(await amenityConditions(amenities))];
+    }
     if (minPrice || maxPrice || guests) {
       const rq = { status: "ACTIVE" };
       if (minPrice || maxPrice) {
@@ -148,7 +176,8 @@ const handlers = {
     const hotels = await Hotel.find(q)
       .sort({ averageRating: -1, isFeatured: -1 })
       .limit(Math.min(limit, 10))
-      .select("name starRating hotelType averageRating description address.city address.district")
+      .select("name starRating hotelType averageRating description address.city address.district amenities")
+      .populate("amenities", "name")
       .lean();
     const prices = await fromPrices(hotels.map((h) => h._id));
     return hotels.map((h) => shape(h, prices));
@@ -184,7 +213,45 @@ const handlers = {
         bookLink: bookingLink({ hotelId: r.hotelId._id, roomTypeId: r._id, adults, children }),
       }));
   },
+    async get_hotel_details({ hotelId, hotelName }) {
+    const hid = await resolveHotelId(hotelId, hotelName);
+    if (!hid) return { error: "Không tìm thấy khách sạn" };
+    const hotel = await Hotel.findOne({ _id: hid, status: "APPROVED" })
+      .populate("amenities", "name")
+      .select("name slug description starRating hotelType address policies contact amenities averageRating reviewCount")
+      .lean();
+    if (!hotel) return { error: "Không tìm thấy khách sạn" };
 
+    const rooms = await RoomType.find({ hotelId: hid, status: "ACTIVE" })
+      .sort({ basePrice: 1 })
+      .populate("amenities", "name")
+      .select("name bedType size basePrice capacity amenities")
+      .lean();
+
+    return {
+      id: String(hotel._id),
+      name: hotel.name,
+      link: `/hotels/${hotel.slug}`,
+      stars: hotel.starRating,
+      type: hotel.hotelType,
+      rating: hotel.averageRating,
+      reviews: hotel.reviewCount,
+      address: hotel.address,
+      description: hotel.description,
+      amenities: (hotel.amenities || []).map((a) => a.name),
+      policies: hotel.policies,
+      contact: hotel.contact,
+      rooms: rooms.map((r) => ({
+        roomTypeId: String(r._id),
+        room: r.name,
+        bed: r.bedType,
+        sizeM2: r.size,
+        pricePerNight: r.basePrice,
+        capacity: r.capacity,
+        amenities: (r.amenities || []).map((a) => a.name),
+      })),
+    };
+  },
   async check_availability({ checkIn, checkOut, adults = 1, children = 0, rooms = 1, hotelId, hotelName, city, maxPrice, limit = 6 }) {
     const dateOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
     if (!dateOk(checkIn) || !dateOk(checkOut)) return { error: "Ngày không hợp lệ, cần dạng YYYY-MM-DD" };
@@ -335,6 +402,7 @@ const tools = [
     maxPrice: { type: "number" },
     guests: { type: "number" },
     limit: { type: "number" },
+    amenities: { type: "array", items: { type: "string" }, description: 'Tiện nghi bắt buộc, ví dụ ["hồ bơi", "spa"]' },
   }),
   fn("find_rooms", "Tìm loại phòng theo giá và sức chứa, rẻ nhất trước. Mỗi phòng có bookLink.", {
     hotelId: { type: "string" },
@@ -361,6 +429,10 @@ const tools = [
   fn("get_my_bookings", "Đơn đặt phòng của người dùng đang đăng nhập (mặc định: các đơn sắp tới).", {
     upcomingOnly: { type: "boolean", description: "false để xem cả đơn đã qua" },
     limit: { type: "number" },
+  }),
+  fn("get_hotel_details", "Chi tiết một khách sạn: mô tả, tiện nghi, chính sách, các loại phòng kèm tiện nghi phòng và link trang khách sạn.", {
+    hotelId: { type: "string" },
+    hotelName: { type: "string", description: "Tên khách sạn" },
   }),
 ];
 
