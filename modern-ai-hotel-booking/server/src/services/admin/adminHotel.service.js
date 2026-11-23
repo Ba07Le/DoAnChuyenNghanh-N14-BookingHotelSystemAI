@@ -4,7 +4,6 @@ import Booking from "../../models/Booking.js";
 import Notification from "../../models/Notification.js";
 import { httpError } from "../../utils/httpError.js";
 import { logAudit } from "../audit.service.js";
-
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const listHotels = async ({ page, limit, status, search }) => {
