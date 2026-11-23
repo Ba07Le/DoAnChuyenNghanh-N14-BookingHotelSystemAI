@@ -6,6 +6,7 @@ import Coupon from "../models/Coupon.js";
 import User from "../models/User.js";
 import Wishlist from "../models/Wishlist.js";
 import Booking from "../models/Booking.js";
+import Room from "../models/Room.js";
 import "../models/Amenity.js"; // registers the model for populate("amenities")
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -207,6 +208,19 @@ const handlers = {
       .lean();
     const ok = types.filter((t) => t.hotelId?.status === "APPROVED");
 
+    // Physical rooms per room type from the Room collection: only status AVAILABLE can be sold
+    // (MAINTENANCE and INACTIVE are excluded). Room types with no Room records fall back to totalRooms.
+    const roomRows = await Room.aggregate([
+      { $match: { roomTypeId: { $in: ok.map((t) => t._id) } } },
+      {
+        $group: {
+          _id: "$roomTypeId",
+          available: { $sum: { $cond: [{ $eq: ["$status", "AVAILABLE"] }, 1, 0] } },
+        },
+      },
+    ]);
+    const roomStats = Object.fromEntries(roomRows.map((r) => [String(r._id), r]));
+
     const bookings = await Booking.find({
       roomTypeId: { $in: ok.map((t) => t._id) },
       status: { $in: ["PENDING", "CONFIRMED", "CHECKED_IN"] },
@@ -233,7 +247,7 @@ const handlers = {
           capacity: t.capacity,
           pricePerNight: t.basePrice,
           totalPrice: t.basePrice * nights.length * rooms,
-          roomsLeft: t.totalRooms - peak,
+          roomsLeft: (roomStats[String(t._id)]?.available ?? t.totalRooms) - peak,
           hotel: { id: String(t.hotelId._id), name: t.hotelId.name, stars: t.hotelId.starRating, city: t.hotelId.address?.city },
           bookLink: bookingLink({ hotelId: t.hotelId._id, roomTypeId: t._id, checkIn, checkOut, rooms, adults, children }),
         };
