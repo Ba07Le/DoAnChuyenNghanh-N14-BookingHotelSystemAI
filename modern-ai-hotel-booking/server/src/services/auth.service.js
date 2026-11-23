@@ -4,7 +4,10 @@ import User from "../models/User.js";
 import { httpError } from "../utils/httpError.js";
 import { signToken } from "../utils/jwt.js";
 import { verifyOtp } from "./otp.service.js";
-import { verifyFacebookToken, verifyGoogleCredential } from "./socialProvider.service.js";
+import {
+  verifyFacebookToken,
+  verifyGoogleCredential,
+} from "./socialProvider.service.js";
 
 const PROVIDER_FIELD = { google: "googleId", facebook: "facebookId" };
 const STAFF_ROLES = ["ADMIN", "HOTEL_OWNER"];
@@ -21,10 +24,14 @@ const toPublicUser = (user) => ({
   status: user.status,
 });
 
-const createSession = (user) => ({ token: signToken(user), user: toPublicUser(user) });
+const createSession = (user) => ({
+  token: signToken(user),
+  user: toPublicUser(user),
+});
 
 const assertActive = (user) => {
-  if (user.status !== "ACTIVE") throw httpError(403, "Tài khoản hiện không thể đăng nhập.");
+  if (user.status !== "ACTIVE")
+    throw httpError(403, "Tài khoản hiện không thể đăng nhập.");
 };
 
 const normalizeName = (name) => {
@@ -32,7 +39,8 @@ const normalizeName = (name) => {
   return clean.length >= 2 ? clean : "Người dùng";
 };
 
-const nameFromEmail = (email) => normalizeName(email.split("@")[0].replace(/[._+-]+/g, " "));
+const nameFromEmail = (email) =>
+  normalizeName(email.split("@")[0].replace(/[._+-]+/g, " "));
 
 // tokenVersion bị ẩn mặc định nên phải chọn rõ khi cần ký token hoặc tăng phiên bản
 const findUser = (filter) => User.findOne(filter).select("+tokenVersion");
@@ -51,7 +59,8 @@ const completeLogin = async (user) => {
 
 // Mật khẩu giả để vẫn tốn thời gian so sánh khi không có tài khoản, tránh lộ email nào tồn tại
 let dummyHash;
-const getDummyHash = async () => (dummyHash ??= await bcrypt.hash(crypto.randomUUID(), BCRYPT_ROUNDS));
+const getDummyHash = async () =>
+  (dummyHash ??= await bcrypt.hash(crypto.randomUUID(), BCRYPT_ROUNDS));
 
 /**
  * Đăng nhập bằng email và mật khẩu, chỉ dành cho ADMIN và HOTEL_OWNER.
@@ -60,10 +69,16 @@ const getDummyHash = async () => (dummyHash ??= await bcrypt.hash(crypto.randomU
  */
 export const loginStaff = async (email, password) => {
   const user = await findUser({ email }).select("+passwordHash");
-  const isStaff = Boolean(user && STAFF_ROLES.includes(user.role) && user.passwordHash);
+  const isStaff = Boolean(
+    user && STAFF_ROLES.includes(user.role) && user.passwordHash,
+  );
 
-  const passwordMatches = await bcrypt.compare(password, isStaff ? user.passwordHash : await getDummyHash());
-  if (!isStaff || !passwordMatches) throw httpError(401, "Email hoặc mật khẩu không chính xác.");
+  const passwordMatches = await bcrypt.compare(
+    password,
+    isStaff ? user.passwordHash : await getDummyHash(),
+  );
+  if (!isStaff || !passwordMatches)
+    throw httpError(401, "Email hoặc mật khẩu không chính xác.");
 
   return completeLogin(user);
 };
@@ -81,13 +96,27 @@ export const loginWithEmailOtp = async (email, code) => {
   let user = await findUser({ email });
 
   if (!user) {
-    user = new User({ fullName: nameFromEmail(email), email, emailVerified: true });
+    user = new User({
+      fullName: nameFromEmail(email),
+      email,
+      emailVerified: true,
+    });
+  } else if (STAFF_ROLES.includes(user.role)) {
+    throw httpError(
+      403,
+      "Tài khoản quản trị phải đăng nhập tại trang quản lý.",
+    );
   } else if (!user.emailVerified) {
     user.facebookId = undefined;
     user.emailVerified = true;
     revokeOldTokens(user);
   }
 
+  if (STAFF_ROLES.includes(user.role))
+    throw httpError(
+      403,
+      "Tài khoản quản trị phải đăng nhập tại trang quản lý.",
+    );
   return completeLogin(user);
 };
 
@@ -115,18 +144,32 @@ const loginWithSocial = async (provider, profile) => {
     }
 
     if (provider === "google" && !profile.emailVerified) {
-      throw httpError(400, "Email Google chưa được xác minh nên không thể đăng nhập.");
+      throw httpError(
+        400,
+        "Email Google chưa được xác minh nên không thể đăng nhập.",
+      );
     }
 
     const existing = await findUser({ email: profile.email });
 
     if (existing) {
+      if (STAFF_ROLES.includes(existing.role))
+        throw httpError(
+          403,
+          "Tài khoản quản trị phải đăng nhập tại trang quản lý.",
+        );
       if (existing[idField]) {
-        throw httpError(409, "Email này đã liên kết với một tài khoản mạng xã hội khác.");
+        throw httpError(
+          409,
+          "Email này đã liên kết với một tài khoản mạng xã hội khác.",
+        );
       }
 
       if (provider === "facebook" && !existing.emailVerified) {
-        throw httpError(409, "Email này đã có tài khoản. Vui lòng đăng nhập bằng mã gửi qua email hoặc Google.");
+        throw httpError(
+          409,
+          "Email này đã có tài khoản. Vui lòng đăng nhập bằng mã gửi qua email hoặc Google.",
+        );
       }
 
       if (provider === "google" && !existing.emailVerified) {
@@ -149,6 +192,11 @@ const loginWithSocial = async (provider, profile) => {
     }
   }
 
+  if (STAFF_ROLES.includes(user.role))
+    throw httpError(
+      403,
+      "Tài khoản quản trị phải đăng nhập tại trang quản lý.",
+    );
   return completeLogin(user);
 };
 

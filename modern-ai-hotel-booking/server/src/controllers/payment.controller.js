@@ -89,12 +89,10 @@ const preparePayment = async (req, res, method) => {
 
     const { booking, payment } = authorized;
     if (booking.status !== "PENDING_PAYMENT") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Đơn đặt phòng không ở trạng thái chờ thanh toán.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Đơn đặt phòng không ở trạng thái chờ thanh toán.",
+      });
     }
     if (booking.paymentStatus === "PAID" || payment.status === "SUCCEEDED") {
       return res
@@ -154,12 +152,10 @@ const preparePayment = async (req, res, method) => {
       });
     }
 
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Phương thức thanh toán không hợp lệ.",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Phương thức thanh toán không hợp lệ.",
+    });
   } catch (error) {
     console.error(`Create ${method} payment error:`, error);
     const missingConfig = error.message?.startsWith("Thiếu cấu hình");
@@ -203,7 +199,9 @@ const settlePayment = async ({
         !currentPayment ||
         !currentBooking ||
         currentPayment.status === "SUCCEEDED" ||
-        currentBooking.status === "CANCELLED"
+        currentPayment.status !== "PENDING" ||
+        currentBooking.status !== "PENDING_PAYMENT" ||
+        currentBooking.paymentStatus !== "UNPAID"
       )
         return;
 
@@ -217,9 +215,7 @@ const settlePayment = async ({
       currentPayment.paidAt = new Date();
 
       currentBooking.paymentStatus = "PAID";
-      // Không khôi phục đơn đã bị hủy khi khách đang ở trang thanh toán.
-      if (currentBooking.status !== "CANCELLED")
-        currentBooking.status = "CONFIRMED";
+      currentBooking.status = "CONFIRMED";
 
       await currentPayment.save({ session });
       await currentBooking.save({ session });
@@ -280,26 +276,19 @@ export const sepayIpn = async (req, res) => {
       req.get("x-secret-key") ||
       req.headers["x-secret-key"];
 
-    console.log("[SePay IPN] Nhận callback webhook:", {
-      hasSecretHeader: Boolean(suppliedSecret),
-      headers: req.headers,
-      body: req.body,
-    });
-
-    if (configuredSecret) {
-      if (
-        !suppliedSecret ||
-        !timingSafeStringEqual(suppliedSecret, configuredSecret)
-      ) {
-        console.warn("[SePay IPN] Xác thực X-Secret-Key thất bại.");
-        return res
-          .status(401)
-          .json({
-            success: false,
-            message:
-              "IPN authentication failed. Vui lòng cấu hình Secret Key trên SePay trùng với SEPAY_IPN_SECRET.",
-          });
-      }
+    // Bắt buộc cấu hình secret; không xử lý callback khi thiếu khoá.
+    if (!configuredSecret) {
+      return res
+        .status(503)
+        .json({ success: false, message: "SePay IPN chưa được cấu hình." });
+    }
+    if (
+      !suppliedSecret ||
+      !timingSafeStringEqual(suppliedSecret, configuredSecret)
+    ) {
+      return res
+        .status(401)
+        .json({ success: false, message: "IPN authentication failed." });
     }
 
     const body = req.body || {};
@@ -323,26 +312,19 @@ export const sepayIpn = async (req, res) => {
     const order = body.order || {};
     const transaction = body.transaction || {};
 
-    // Tìm payment theo mã hóa đơn, nếu không thấy fallback sang bookingId trong custom_data
-    let payment = await Payment.findOne({
+    // Đối chiếu chính xác mã hoá đơn đã gửi tới cổng thanh toán.
+    if (
+      typeof order.order_invoice_number !== "string" ||
+      !order.order_invoice_number
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu mã hoá đơn." });
+    }
+    const payment = await Payment.findOne({
       method: "SEPAY",
       providerOrderId: order.order_invoice_number,
     });
-    if (!payment && order.custom_data) {
-      let customData = order.custom_data;
-      if (typeof customData === "string") {
-        try {
-          customData = JSON.parse(customData);
-        } catch {}
-      }
-      if (customData?.bookingId && isValidObjectId(customData.bookingId)) {
-        payment = await Payment.findOne({
-          method: "SEPAY",
-          bookingId: customData.bookingId,
-        });
-      }
-    }
-
     if (!payment) {
       console.warn(
         `[SePay IPN] Không tìm thấy giao dịch cho invoice: ${order.order_invoice_number}`,
@@ -370,12 +352,10 @@ export const sepayIpn = async (req, res) => {
         .json({ success: false, message: "Số tiền thanh toán không khớp." });
     }
     if (order.order_currency && order.order_currency !== "VND") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Loại tiền thanh toán không hợp lệ.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Loại tiền thanh toán không hợp lệ.",
+      });
     }
     if (order.order_status !== "CAPTURED") {
       console.warn(
@@ -421,12 +401,10 @@ export const zaloPayCallback = async (req, res) => {
   try {
     const body = req.body || {};
     if (!verifyZaloPayCallback(body)) {
-      return res
-        .status(400)
-        .json({
-          return_code: -1,
-          return_message: "Invalid callback signature",
-        });
+      return res.status(400).json({
+        return_code: -1,
+        return_message: "Invalid callback signature",
+      });
     }
 
     const data = JSON.parse(body.data);

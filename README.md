@@ -3,10 +3,11 @@
 BookingHotelSystemAI
 ├─ modern-ai-hotel-booking
 │  ├─ client
+│  │  ├─ .env
 │  │  ├─ dist
 │  │  │  ├─ assets
-│  │  │  │  ├─ index-BpsoXJ8Z.css
-│  │  │  │  └─ index-pZp6GGoN.js
+│  │  │  │  ├─ index-Bnj5uMqK.js
+│  │  │  │  └─ index-BpsoXJ8Z.css
 │  │  │  ├─ favicon.svg
 │  │  │  ├─ icons.svg
 │  │  │  └─ index.html
@@ -126,7 +127,10 @@ BookingHotelSystemAI
 │     ├─ package-lock.json
 │     ├─ package.json
 │     ├─ scripts
+│     │  ├─ checkHotels.js
+│     │  ├─ checkIndex.js
 │     │  ├─ embedHotels.js
+│     │  ├─ seedHotels.js
 │     │  └─ testSearch.js
 │     ├─ src
 │     │  ├─ config

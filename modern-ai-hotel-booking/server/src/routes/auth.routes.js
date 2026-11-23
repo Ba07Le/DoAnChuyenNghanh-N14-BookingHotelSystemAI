@@ -1,8 +1,6 @@
 import express from "express";
 
 import {
-  register,
-  login,
   me,
   requestOtp,
   verifyOtp,
@@ -31,9 +29,7 @@ import {
 
 const router = express.Router();
 
-// Đăng ký và đăng nhập bằng mật khẩu hiện tại
-router.post("/register", authLimiter, register);
-router.post("/login", authLimiter, login);
+// Customer chỉ dùng OTP/Google/Facebook; Admin/Owner dùng /manager/login.
 
 // Đăng nhập bằng Email OTP
 router.post(

@@ -84,12 +84,11 @@ function Navbar() {
                   Đăng nhập
                 </Link>
 
-                {/* Register */}
                 <Link
-                  to="/register"
-                  className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-blue-700 hover:shadow-md"
+                  to="/manager/login"
+                  className="rounded-xl px-4 py-2 text-sm font-medium text-slate-500 hover:text-blue-600"
                 >
-                  Đăng ký
+                  Quản lý
                 </Link>
               </>
             ) : (
@@ -215,7 +214,9 @@ function Navbar() {
                           type="button"
                           onClick={() => {
                             setOpenProfile(false);
-                            navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard"); // [ADMIN] admin vào trang quản trị riêng
+                            navigate(
+                              user?.role === "ADMIN" ? "/admin" : "/dashboard",
+                            ); // [ADMIN] admin vào trang quản trị riêng
                           }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
                         >

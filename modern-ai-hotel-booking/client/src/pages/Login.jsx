@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { loginUser, requestOtp, verifyOtp } from "../api/authApi";
+import { requestOtp, verifyOtp } from "../api/authApi";
 
 import SocialLoginButtons from "../components/SocialLoginButtons";
 import { useAuth } from "../context/AuthContext";
@@ -21,13 +21,7 @@ function Login() {
   const { login } = useAuth();
 
   // Hai phương thức đăng nhập
-  const [method, setMethod] = useState("password");
-
-  // Đăng nhập bằng mật khẩu
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [method] = useState("otp");
 
   // Đăng nhập bằng OTP
   const [otpStep, setOtpStep] = useState("email");
@@ -74,6 +68,10 @@ function Login() {
       return;
     }
 
+    if (data.user.role !== "CUSTOMER") {
+      setError("Tài khoản quản trị vui lòng đăng nhập tại /manager/login.");
+      return;
+    }
     login(data);
 
     setError("");
@@ -90,51 +88,6 @@ function Login() {
     redirectTimer.current = setTimeout(() => {
       navigate(destination, { replace: true });
     }, REDIRECT_DELAY_MS);
-  };
-
-  // Chuyển phương thức đăng nhập
-  const changeMethod = (nextMethod) => {
-    if (loading || success) return;
-
-    setMethod(nextMethod);
-    setError("");
-    setSuccess("");
-  };
-
-  // Thay đổi thông tin mật khẩu
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-
-    setError("");
-  };
-
-  // ĐĂNG NHẬP BẰNG MẬT KHẨU
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-
-    if (loading || success) return;
-
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    try {
-      const data = await loginUser({
-        email: form.email.trim(),
-        password: form.password,
-      });
-
-      handleLoginSuccess(data);
-    } catch (err) {
-      setError(getErrorMessage(err, "Đăng nhập thất bại. Vui lòng thử lại."));
-    } finally {
-      setLoading(false);
-    }
   };
 
   // GỬI MÃ OTP
@@ -251,35 +204,6 @@ function Login() {
           </p>
         </div>
 
-        {/* CHỌN PHƯƠNG THỨC ĐĂNG NHẬP */}
-        <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-          <button
-            type="button"
-            onClick={() => changeMethod("password")}
-            disabled={loading || Boolean(success)}
-            className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
-              !isOtpMethod
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Mật khẩu
-          </button>
-
-          <button
-            type="button"
-            onClick={() => changeMethod("otp")}
-            disabled={loading || Boolean(success)}
-            className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
-              isOtpMethod
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Email OTP
-          </button>
-        </div>
-
         {/* THÔNG BÁO LỖI */}
         {error && (
           <div
@@ -298,61 +222,6 @@ function Login() {
           >
             {success}
           </div>
-        )}
-
-        {/* ĐĂNG NHẬP BẰNG MẬT KHẨU */}
-        {!isOtpMethod && (
-          <form onSubmit={handlePasswordSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="login-email"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Email
-              </label>
-
-              <input
-                id="login-email"
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Nhập email"
-                autoComplete="email"
-                className={inputClass}
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="login-password"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Mật khẩu
-              </label>
-
-              <input
-                id="login-password"
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Nhập mật khẩu"
-                autoComplete="current-password"
-                className={inputClass}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || Boolean(success)}
-              className={primaryButtonClass}
-            >
-              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </button>
-          </form>
         )}
 
         {/* ĐĂNG NHẬP BẰNG EMAIL OTP */}
@@ -484,17 +353,6 @@ function Login() {
             />
           </>
         )}
-
-        {/* ĐĂNG KÝ */}
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Chưa có tài khoản?{" "}
-          <Link
-            to="/register"
-            className="font-semibold text-blue-600 transition-colors hover:text-blue-700"
-          >
-            Đăng ký
-          </Link>
-        </p>
 
         {/* TRANG CHỦ */}
         <p className="mt-3 text-center text-sm">
