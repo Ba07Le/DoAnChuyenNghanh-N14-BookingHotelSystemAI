@@ -9,54 +9,49 @@ import {
   CalendarDays,
   Sparkles,
 } from "lucide-react";
-import { getOffers } from "../api/offerApi";
+import { getHomepageData } from "../api/homepageApi";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
-const fallbackOffers = [
-  {
-    _id: "demo-1",
-    code: "WELCOME10",
-    description: "Giảm 10% cho khách hàng mới khi đặt phòng tại SeeYAHH!.",
-    discountType: "PERCENTAGE",
-    discountValue: 10,
-    startDate: "2026-01-01",
-    endDate: "2026-12-31",
-  },
-  {
-    _id: "demo-2",
-    code: "SUMMER20",
-    description: "Ưu đãi đặc biệt cho những chuyến du lịch và nghỉ dưỡng.",
-    discountType: "PERCENTAGE",
-    discountValue: 20,
-    startDate: "2026-06-01",
-    endDate: "2026-10-31",
-  },
-];
 
 export default function Offers() {
   const [offers, setOffers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchOffers = async () => {
       try {
-        const data = await getOffers();
-
-        setOffers(Array.isArray(data) ? data : data?.offers || []);
+        // Cùng nguồn dữ liệu với mục "Ưu đãi nổi bật" trên trang chủ.
+        const response = await getHomepageData();
+        const deals = response?.data?.deals;
+        if (!Array.isArray(deals)) {
+          throw new Error("Dữ liệu ưu đãi từ máy chủ không hợp lệ.");
+        }
+        if (!cancelled) {
+          setOffers(deals);
+          setLoadError("");
+        }
       } catch (error) {
         console.error("Không thể tải ưu đãi:", error);
-
-        // Tạm dùng dữ liệu mẫu nếu API chưa hoàn thiện
-        setOffers(fallbackOffers);
+        if (!cancelled) {
+          setOffers([]);
+          setLoadError(
+            "Không thể tải danh sách ưu đãi. Vui lòng thử tải lại trang.",
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchOffers();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCopy = async (code) => {
@@ -237,11 +232,11 @@ export default function Offers() {
               <Percent size={40} className="mx-auto text-slate-300" />
 
               <h3 className="mt-4 font-semibold text-slate-900">
-                Chưa có ưu đãi
+                {loadError ? "Không tải được ưu đãi" : "Chưa có ưu đãi"}
               </h3>
 
               <p className="mt-2 text-sm text-slate-400">
-                Hiện tại chưa có chương trình ưu đãi nào.
+                {loadError || "Hiện tại chưa có chương trình ưu đãi nào."}
               </p>
             </div>
           )}

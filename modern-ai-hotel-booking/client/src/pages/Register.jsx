@@ -1,13 +1,18 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+
 import { registerUser } from "../api/authApi";
 
 function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Nhận email từ Footer thông qua URL
+  const emailFromFooter = searchParams.get("email") || "";
 
   const [form, setForm] = useState({
     fullName: "",
-    email: "",
+    email: emailFromFooter,
     phone: "",
     password: "",
     confirmPassword: "",
@@ -17,11 +22,23 @@ function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Đồng bộ email khi URL thay đổi
+  useEffect(() => {
+    if (emailFromFooter) {
+      setForm((prev) => ({
+        ...prev,
+        email: emailFromFooter,
+      }));
+    }
+  }, [emailFromFooter]);
+
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     setError("");
   };
@@ -85,6 +102,7 @@ function Register() {
             placeholder="Họ và tên"
             value={form.fullName}
             onChange={handleChange}
+            autoComplete="name"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             required
           />
@@ -96,6 +114,7 @@ function Register() {
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
+            autoComplete="email"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             required
           />
@@ -107,6 +126,7 @@ function Register() {
             placeholder="Số điện thoại"
             value={form.phone}
             onChange={handleChange}
+            autoComplete="tel"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
           />
 
@@ -117,6 +137,7 @@ function Register() {
             placeholder="Mật khẩu"
             value={form.password}
             onChange={handleChange}
+            autoComplete="new-password"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             required
           />
@@ -128,6 +149,7 @@ function Register() {
             placeholder="Xác nhận mật khẩu"
             value={form.confirmPassword}
             onChange={handleChange}
+            autoComplete="new-password"
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             required
           />

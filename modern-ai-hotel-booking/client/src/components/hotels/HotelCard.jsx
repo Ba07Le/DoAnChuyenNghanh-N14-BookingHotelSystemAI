@@ -1,23 +1,41 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { toggleWishlist } from "../../api/profileApi";
+import { useWishlist } from "../../context/WishlistContext";
 import { Bath, Heart, MapPin, Star, Waves, Wifi, Wind } from "lucide-react";
 
 function HotelCard({ hotel, searchParams = "" }) {
-  const [liked, setLiked] = useState(false);
+  const { isLiked, toggleLike } = useWishlist();
+  const [saving, setSaving] = useState(false);
+
+  const hotelId = hotel._id || hotel.id;
+  const liked = isLiked(hotelId);
+
+  const handleWishlist = async () => {
+    if (!hotelId || saving) return;
+
+    setSaving(true);
+
+    try {
+      await toggleLike(hotelId);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN").format(price);
   };
 
   const getAmenityIcon = (amenity) => {
-  const text = (typeof amenity === "string" ? amenity : amenity?.name || "").toLowerCase();
-  if (text.includes("wi-fi")) return <Wifi size={14} />;
-  if (text.includes("hồ bơi")) return <Waves size={14} />;
-  if (text.includes("điều hòa")) return <Wind size={14} />;
-  if (text.includes("bồn tắm")) return <Bath size={14} />;
-  return null;
-};
+    const text = (
+      typeof amenity === "string" ? amenity : amenity?.name || ""
+    ).toLowerCase();
+    if (text.includes("wi-fi")) return <Wifi size={14} />;
+    if (text.includes("hồ bơi")) return <Waves size={14} />;
+    if (text.includes("điều hòa")) return <Wind size={14} />;
+    if (text.includes("bồn tắm")) return <Bath size={14} />;
+    return null;
+  };
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
@@ -43,20 +61,25 @@ function HotelCard({ hotel, searchParams = "" }) {
           {/* Wishlist */}
           <button
             type="button"
-            onClick={async () => { try { const r = await toggleWishlist(hotel._id || hotel.id); setLiked(r.liked); } catch { setLiked(!liked); } }}
+            onClick={handleWishlist}
+            disabled={saving}
+            aria-label={liked ? "Bỏ khỏi Wishlist" : "Thêm vào Wishlist"}
+            aria-pressed={liked}
             className="
-              absolute right-4 top-4
-              flex h-10 w-10
-              items-center justify-center
-              rounded-full
-              bg-white/90
-              text-slate-700
-              shadow-lg
-              backdrop-blur
-              transition-all
-              duration-200
-              hover:scale-105
-            "
+    absolute right-4 top-4
+    flex h-10 w-10
+    items-center justify-center
+    rounded-full
+    bg-white/90
+    text-slate-700
+    shadow-lg
+    backdrop-blur
+    transition-all
+    duration-200
+    hover:scale-105
+    disabled:cursor-wait
+    disabled:opacity-60
+  "
           >
             <Heart
               size={18}
@@ -102,12 +125,16 @@ function HotelCard({ hotel, searchParams = "" }) {
               <MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" />
 
               <span>
-  {typeof hotel.address === "string"
-    ? hotel.address
-    : [hotel.address?.addressLine, hotel.address?.district, hotel.address?.city]
-        .filter(Boolean)
-        .join(", ")}
-</span>
+                {typeof hotel.address === "string"
+                  ? hotel.address
+                  : [
+                      hotel.address?.addressLine,
+                      hotel.address?.district,
+                      hotel.address?.city,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+              </span>
             </div>
 
             {/* Rating */}
@@ -134,17 +161,18 @@ function HotelCard({ hotel, searchParams = "" }) {
             {/* Amenities */}
             <div className="mt-5 flex flex-wrap gap-2">
               {(hotel.amenities || []).slice(0, 4).map((amenity, i) => {
-  const label = typeof amenity === "string" ? amenity : amenity?.name;
-  return (
-    <span
-      key={amenity?._id || label || i}
-      className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600"
-    >
-      {getAmenityIcon(amenity)}
-      {label}
-    </span>
-  );
-})}
+                const label =
+                  typeof amenity === "string" ? amenity : amenity?.name;
+                return (
+                  <span
+                    key={amenity?._id || label || i}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600"
+                  >
+                    {getAmenityIcon(amenity)}
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           </div>
 
@@ -180,17 +208,25 @@ function HotelCard({ hotel, searchParams = "" }) {
             <Link
               to={`/hotels/${hotel.slug}${searchParams ? `?${searchParams}` : ""}`}
               className="
-                rounded-xl
-                bg-slate-900
-                px-5 py-3
-                text-sm font-semibold
-                text-white
-                transition-all
-                duration-200
-                hover:bg-blue-600
-                hover:shadow-lg
-                active:scale-[0.98]
-              "
+    inline-flex
+    shrink-0
+    items-center
+    justify-center
+    whitespace-nowrap
+    rounded-xl
+    bg-blue-600
+    px-6 py-3
+    text-sm
+    font-semibold
+    !text-white
+    shadow-sm
+    transition-all
+    duration-200
+    hover:bg-blue-700
+    hover:!text-white
+    hover:shadow-lg
+    active:scale-[0.98]
+  "
             >
               Xem chi tiết
             </Link>

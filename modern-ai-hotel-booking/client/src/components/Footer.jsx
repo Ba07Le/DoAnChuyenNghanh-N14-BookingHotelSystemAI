@@ -1,54 +1,77 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Footer() {
+  const navigate = useNavigate();
+
+  // Lấy trạng thái đăng nhập từ AuthContext
+  const { token, isAuthenticated } = useAuth();
+
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+
+  // Chỉ hiển thị Newsletter khi chưa đăng nhập
+  const showNewsletter = !token && !isAuthenticated;
+
   const handleSubscribe = (e) => {
     e.preventDefault();
 
-    // Sau này có thể kết nối API đăng ký nhận email tại đây.
+    const email = newsletterEmail.trim();
+
+    if (!email) return;
+
+    // Chuyển sang Register và điền sẵn email
+    navigate(`/register?email=${encodeURIComponent(email)}`);
   };
 
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
-      {/* Newsletter */}
-      <div className="border-b border-slate-800">
-        <div className="mx-auto max-w-7xl px-6 py-12">
-          <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-600 px-6 py-8 md:flex-row md:items-center md:px-10">
-            {/* Content */}
-            <div className="max-w-xl">
-              <h2 className="text-2xl font-bold text-white md:text-3xl">
-                Nhận ưu đãi du lịch mới nhất
-              </h2>
+      {/* Newsletter - chỉ hiển thị khi chưa đăng nhập */}
+      {showNewsletter && (
+        <div className="border-b border-slate-800">
+          <div className="mx-auto max-w-7xl px-6 py-12">
+            <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-600 px-6 py-8 md:flex-row md:items-center md:px-10">
+              {/* Content */}
+              <div className="max-w-xl">
+                <h2 className="text-2xl font-bold text-white md:text-3xl">
+                  Nhận ưu đãi du lịch mới nhất
+                </h2>
 
-              <p className="mt-3 text-sm leading-6 text-blue-100">
-                Đăng ký nhận thông tin về khách sạn, ưu đãi và những điểm đến
-                hấp dẫn từ SeeYAHH!.
-              </p>
-            </div>
+                <p className="mt-3 text-sm leading-6 text-blue-100">
+                  Đăng ký nhận thông tin về khách sạn, ưu đãi và những điểm đến
+                  hấp dẫn từ SeeYAHH!.
+                </p>
+              </div>
 
-            {/* Form */}
-            <form
-              onSubmit={handleSubscribe}
-              className="flex w-full max-w-md gap-2"
-            >
-              <input
-                type="email"
-                placeholder="Email của bạn"
-                required
-                className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20"
-              />
-
-              <button
-                type="submit"
-                className="shrink-0 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-900 hover:shadow-lg"
+              {/* Form */}
+              <form
+                onSubmit={handleSubscribe}
+                className="flex w-full max-w-md gap-2"
               >
-                Đăng ký
-              </button>
-            </form>
+                <input
+                  type="email"
+                  placeholder="Email của bạn"
+                  aria-label="Email đăng ký"
+                  autoComplete="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20"
+                />
+
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-900 hover:shadow-lg"
+                >
+                  Đăng ký
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Footer */}
+      {/* Main Footer - luôn hiển thị */}
       <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -205,7 +228,7 @@ function Footer() {
         </div>
       </div>
 
-      {/* Bottom */}
+      {/* Bottom - luôn hiển thị */}
       <div className="border-t border-slate-800">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} SeeYAHH!. All rights reserved.</p>

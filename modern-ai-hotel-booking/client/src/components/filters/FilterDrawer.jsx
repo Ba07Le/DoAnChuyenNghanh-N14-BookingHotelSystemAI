@@ -13,7 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-const FilterDrawer = ({ isOpen, onClose, onApply }) => {
+const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
   const [filters, setFilters] = useState({
     cities: [],
     hotelTypes: [],
@@ -24,6 +24,20 @@ const FilterDrawer = ({ isOpen, onClose, onApply }) => {
     bedTypes: [],
     amenities: [],
   });
+
+  useEffect(() => {
+    if (isOpen && value)
+      setFilters({
+        cities: [...(value.cities || [])],
+        hotelTypes: [...(value.hotelTypes || [])],
+        stars: [...(value.stars || [])],
+        minPrice: value.minPrice ?? "",
+        maxPrice: value.maxPrice ?? "",
+        rating: value.rating ?? "",
+        bedTypes: [...(value.bedTypes || [])],
+        amenities: [...(value.amenities || [])],
+      });
+  }, [isOpen, value]);
 
   const toggleArrayValue = (key, value) => {
     setFilters((prev) => {
@@ -59,6 +73,14 @@ const FilterDrawer = ({ isOpen, onClose, onApply }) => {
   };
 
   const handleApply = () => {
+    if (
+      filters.minPrice !== "" &&
+      filters.maxPrice !== "" &&
+      Number(filters.minPrice) > Number(filters.maxPrice)
+    ) {
+      alert("Giá từ không được lớn hơn giá đến.");
+      return;
+    }
     onApply?.(filters);
     onClose();
   };
