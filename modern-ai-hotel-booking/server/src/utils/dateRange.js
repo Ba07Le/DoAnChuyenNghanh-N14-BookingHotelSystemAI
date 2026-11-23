@@ -1,38 +1,28 @@
-// Tiện ích ngày theo giờ Việt Nam (UTC+7, không có giờ mùa hè).
-// File gốc trong bản dump bị đánh dấu "Binary file" nên được viết lại theo cách các service đang gọi:
-//   TZ, vnStart(day), vnEnd(day), resolveRange({from,to}), buckets(start,end,groupBy)
+import { httpError } from "./httpError.js";
+
 export const TZ = "Asia/Ho_Chi_Minh";
-const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const vnStart = (d) => new Date(`${d}T00:00:00.000+07:00`);
+export const vnEnd = (d) => new Date(`${d}T23:59:59.999+07:00`);
+// Date -> "YYYY-MM-DD" theo giờ Việt Nam
+export const ymd = (date) => new Intl.DateTimeFormat("sv-SE", { timeZone: TZ }).format(date);
 
-// "YYYY-MM-DD" của một thời điểm, tính theo giờ VN
-const vnDay = (date) => new Date(date.getTime() + VN_OFFSET_MS).toISOString().slice(0, 10);
-
-export const vnStart = (day) => new Date(`${day}T00:00:00.000+07:00`);
-export const vnEnd = (day) => new Date(`${day}T23:59:59.999+07:00`);
-
-// Mặc định 30 ngày gần nhất (tính cả hôm nay). Nếu from > to thì đổi chỗ cho khỏi ra khoảng rỗng.
-export const resolveRange = ({ from, to } = {}) => {
-  const today = vnDay(new Date());
-  let end = vnEnd(to || today);
-  let start = from ? vnStart(from) : vnStart(vnDay(new Date(end.getTime() - 29 * DAY_MS)));
-  if (start > end) [start, end] = [vnStart(vnDay(end)), vnEnd(vnDay(start))];
+// Mặc định 30 ngày gần nhất, tối đa 366 ngày để không quét cả collection
+export const resolveRange = ({ from, to }, maxDays = 366) => {
+  const end = to ? vnEnd(to) : new Date();
+  const start = from ? vnStart(from) : vnStart(ymd(new Date(end.getTime() - 29 * 86400000)));
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw httpError(400, "Ngày không hợp lệ.");
+  if (start > end) throw httpError(400, "'from' phải nhỏ hơn hoặc bằng 'to'.");
+  if ((end - start) / 86400000 > maxDays) throw httpError(400, `Khoảng thời gian tối đa là ${maxDays} ngày.`);
   return { start, end };
 };
 
-// Danh sách khoá thời gian liên tục ("YYYY-MM-DD" hoặc "YYYY-MM") để biểu đồ không bị hụt ngày/tháng không có dữ liệu.
-export const buckets = (start, end, groupBy = "day") => {
+// Danh sách mốc thời gian liên tục (để điền 0 cho ngày/tháng không có booking)
+export const buckets = (start, end, groupBy) => {
   const keys = [];
-  const last = vnDay(end);
-  if (groupBy === "month") {
-    let [y, m] = vnDay(start).slice(0, 7).split("-").map(Number);
-    const [ly, lm] = last.slice(0, 7).split("-").map(Number);
-    while (y < ly || (y === ly && m <= lm)) {
-      keys.push(`${y}-${String(m).padStart(2, "0")}`);
-      m += 1; if (m > 12) { m = 1; y += 1; }
-    }
-    return keys;
+  const seen = new Set();
+  for (let t = start.getTime(); t <= end.getTime(); t += 86400000) {
+    const k = groupBy === "month" ? ymd(new Date(t)).slice(0, 7) : ymd(new Date(t));
+    if (!seen.has(k)) { seen.add(k); keys.push(k); }
   }
-  for (let t = vnStart(vnDay(start)).getTime(); vnDay(new Date(t)) <= last; t += DAY_MS) keys.push(vnDay(new Date(t)));
   return keys;
 };
