@@ -186,8 +186,7 @@ export default function HotelDetails() {
                       bookingParams.set("hotelId", hotel._id);
                       bookingParams.set("roomTypeId", room._id);
                       const target = `/booking?${bookingParams.toString()}`;
-                      if (isAuthenticated) nav(target);
-                      else nav("/login", { state: { from: target } });
+                      nav(target);
                     }}
                     className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600"
                   >

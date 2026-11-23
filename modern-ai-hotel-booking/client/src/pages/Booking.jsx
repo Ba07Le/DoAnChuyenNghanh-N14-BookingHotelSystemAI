@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -79,6 +79,7 @@ function Booking() {
     children: Math.max(0, Number(searchParams.get("children")) || 0),
     paymentMethod: "CASH",
   });
+  const contactEdited = useRef({});
   const [contact, setContact] = useState({
     fullName: user?.fullName ?? "",
     email: user?.email ?? "",
@@ -126,9 +127,9 @@ function Booking() {
       .then(({ user: profile }) => {
         setContact((prev) => ({
           ...prev,
-          fullName: prev.fullName || profile.fullName || "",
-          email: prev.email || profile.email || "",
-          phone: prev.phone || profile.phone || "",
+          fullName: contactEdited.current.fullName ? prev.fullName : profile.fullName || prev.fullName || "",
+          email: contactEdited.current.email ? prev.email : profile.email || prev.email || "",
+          phone: contactEdited.current.phone ? prev.phone : profile.phone || prev.phone || "",
         }));
       })
       .catch(() => {
@@ -255,6 +256,7 @@ function Booking() {
   };
 
   const handleContactChange = (name, value) => {
+    contactEdited.current[name] = true;
     setContact((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
     setSubmitError("");

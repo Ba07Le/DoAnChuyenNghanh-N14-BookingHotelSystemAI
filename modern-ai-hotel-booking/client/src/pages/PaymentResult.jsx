@@ -112,7 +112,9 @@ export default function PaymentResult() {
             <button onClick={() => { setLoading(true); refresh(); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold">
               <RefreshCw size={16} />Kiểm tra lại
             </button>
-            <Link to="/bookings" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Xem đặt phòng của tôi</Link>
+            <Link to={result?.booking?.lookupEmail
+              ? `/booking/lookup?code=${encodeURIComponent(result.booking.bookingCode)}&email=${encodeURIComponent(result.booking.lookupEmail)}`
+              : "/bookings"} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white">Xem thông tin đặt phòng</Link>
           </div>
         </section>
       </main>

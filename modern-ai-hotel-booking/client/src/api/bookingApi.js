@@ -78,9 +78,14 @@ export const lookupBooking = async (bookingCodeOrParams, email) => {
     typeof bookingCodeOrParams === "object" && bookingCodeOrParams !== null
       ? bookingCodeOrParams
       : {
-          bookingCode: bookingCodeOrParams,
+          code: bookingCodeOrParams,
           email,
         };
+
+  if (params.bookingCode && !params.code) {
+    params.code = params.bookingCode;
+    delete params.bookingCode;
+  }
 
   const response = await api.get("/bookings/lookup", {
     params,

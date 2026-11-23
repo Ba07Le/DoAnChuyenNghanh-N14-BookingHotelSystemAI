@@ -17,12 +17,13 @@ const startOfToday = () => {
  * Hàm có thể chạy khi khách mở danh sách đặt phòng hoặc khi gửi đánh giá.
  * Cập nhật từng đơn có điều kiện để chỉ gửi thông báo nhắc đánh giá một lần.
  */
-export const completePastBookings = async (userId = null) => {
+export const completePastBookings = async (userId = null, bookingId = null) => {
   const today = startOfToday();
   const filter = {
     status: { $in: COMPLETABLE_STATUSES },
     checkOut: { $lt: today },
     ...(userId ? { userId } : {}),
+    ...(bookingId ? { _id: bookingId } : {}),
   };
 
   const candidates = await Booking.find(filter)

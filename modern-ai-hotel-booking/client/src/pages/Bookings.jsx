@@ -5,12 +5,18 @@ import {
   MapPin,
   CheckCircle2,
   XCircle,
-  CreditCard,
 } from "lucide-react";
-import { getMyBookings, payBooking, cancelBooking } from "../api/bookingApi";
+import { getMyBookings, cancelBooking } from "../api/bookingApi";
+import { createReview, getMyReviews } from "../api/reviewApi";
+import ReviewForm from "../components/ReviewForm";
 const money = (n) => new Intl.NumberFormat("vi-VN").format(n);
 const fmt = (d) => new Date(d).toLocaleDateString("vi-VN");
 export default function Bookings() {
+  const [reviewedIds, setReviewedIds] = useState(new Set());
+  const [reviewBooking, setReviewBooking] = useState(null);
+  const [reviewError, setReviewError] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [data, setData] = useState([]),
     [loading, setLoading] = useState(true);
   const load = () =>
@@ -18,8 +24,23 @@ export default function Bookings() {
       .then((r) => setData(r.data || []))
       .finally(() => setLoading(false));
   useEffect(() => {
-    load();
+    load().catch(() => setActionError("Không tải được đơn đặt phòng."));
+    getMyReviews().then((res) => setReviewedIds(new Set((res.data || []).map((r) => String(r.bookingId?._id || r.bookingId))))).catch(() => {});
   }, []);
+  const saveReview = async (values) => {
+    if (!reviewBooking || reviewBooking.status !== "COMPLETED") return;
+    setSavingReview(true);
+    setReviewError("");
+    try {
+      await createReview({ ...values, bookingId: reviewBooking._id });
+      setReviewedIds((prev) => new Set([...prev, String(reviewBooking._id)]));
+      setReviewBooking(null);
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Không gửi được đánh giá.");
+    } finally {
+      setSavingReview(false);
+    }
+  };
   return (
     <div className="bg-slate-50">
       <main className="mx-auto max-w-6xl px-6 py-10">
@@ -27,6 +48,7 @@ export default function Bookings() {
         <p className="mt-2 text-slate-500">
           Theo dõi và quản lý các chuyến đi của bạn.
         </p>
+        {actionError && <p className="mt-4 text-sm text-red-600">{actionError}</p>}
         {loading ? (
           <div className="mt-8 space-y-4">
             {[1, 2].map((i) => (
@@ -82,20 +104,18 @@ export default function Bookings() {
                         <b className="text-xl">{money(b.totalAmount)}đ</b>
                       </div>
                       <div className="flex gap-2">
-                        {b.paymentStatus !== "PAID" &&
-                          b.status !== "CANCELLED" && (
-                            <button
-                              onClick={() => payBooking(b._id).then(load)}
-                              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"
-                            >
-                              <CreditCard size={16} />
-                              Thanh toán
-                            </button>
-                          )}
+                        {b.status === "COMPLETED" && !reviewedIds.has(String(b._id)) && (
+                          <button type="button" onClick={() => { setReviewError(""); setReviewBooking(b); }} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
+                            Viết đánh giá
+                          </button>
+                        )}
+                        {b.status === "COMPLETED" && reviewedIds.has(String(b._id)) && (
+                          <Link to="/my-reviews" className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold">Xem đánh giá</Link>
+                        )}
                         {b.status !== "CANCELLED" &&
                           b.status !== "COMPLETED" && (
                             <button
-                              onClick={() => cancelBooking(b._id).then(load)}
+                              onClick={() => cancelBooking(b._id).then(load).catch((err) => setActionError(err.response?.data?.message || "Không thể hủy đơn."))}
                               className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600"
                             >
                               <XCircle size={16} />
@@ -138,6 +158,7 @@ export default function Bookings() {
             </Link>
           </div>
         )}
+        {reviewBooking && <ReviewForm hotelName={reviewBooking.hotelId?.name} submitting={savingReview} error={reviewError} onSubmit={saveReview} onClose={() => setReviewBooking(null)} />}
       </main>
     </div>
   );

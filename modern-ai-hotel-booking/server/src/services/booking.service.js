@@ -11,6 +11,7 @@ import { contactSchema } from "../utils/bookingValidators.js";
 import { httpError } from "../utils/httpError.js";
 import { sendBookingConfirmation } from "./mail.service.js";
 import { createNotification } from "./notification.service.js";
+import { completePastBookings } from "./bookingLifecycle.service.js";
 
 const MAX_NIGHTS = 30;
 
@@ -367,7 +368,10 @@ export const createBooking = async (user, input) => {
 
 /** Khách vãng lai xem lại đơn bằng mã đặt phòng và email đã dùng khi đặt. */
 export const lookupBooking = async ({ code, email }) => {
-  const booking = await Booking.findOne({ bookingCode: code, "guestInfo.email": email })
+  const normalizedEmail = email.trim().toLowerCase();
+  const match = await Booking.findOne({ bookingCode: code, "guestInfo.email": normalizedEmail }).select("_id").lean();
+  if (match) await completePastBookings(null, match._id);
+  const booking = await Booking.findOne({ bookingCode: code, "guestInfo.email": normalizedEmail })
     .populate("hotelId", "name slug images address policies")
     .populate("roomTypeId", "name")
     .lean();
