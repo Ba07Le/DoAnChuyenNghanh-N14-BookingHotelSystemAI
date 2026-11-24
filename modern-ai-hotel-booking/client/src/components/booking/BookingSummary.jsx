@@ -7,7 +7,7 @@ function BookingSummary({ quote, form, loading }) {
   const hasDates = Boolean(form.checkIn && form.checkOut);
 
   return (
-    <aside className="rounded-3xl bg-slate-900 p-5 sm:p-6 text-white shadow-xl shadow-slate-900/10 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
+    <aside className="sy-booking-summary rounded-3xl bg-slate-900 p-5 sm:p-6 text-white shadow-xl shadow-slate-900/10 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
       {hotel.image && (
         <div className="relative overflow-hidden rounded-2xl">
           <img

@@ -368,7 +368,7 @@ function Booking() {
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
           <form
             onSubmit={handleSubmit}
-            className="space-y-8 rounded-3xl border border-slate-100 bg-white p-8 shadow-sm"
+            className="sy-checkout-form space-y-8 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-8"
           >
             <div>
               <h1 className="text-3xl font-bold text-slate-900">

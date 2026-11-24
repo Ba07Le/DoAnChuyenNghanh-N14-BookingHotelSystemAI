@@ -521,7 +521,7 @@ function Hotels() {
       <Navbar />
 
       {/* THANH TÌM KIẾM */}
-      <section className="border-b border-slate-200 bg-white">
+      <section className="sy-hotel-search border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
             {/* Điểm đến */}

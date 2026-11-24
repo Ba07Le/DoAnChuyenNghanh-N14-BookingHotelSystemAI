@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronDown,
   Building2,
@@ -16,6 +16,16 @@ function Navbar() {
   const navigate = useNavigate();
 
   const [openProfile, setOpenProfile] = useState(false);
+  const profileRef = useRef(null);
+  const { pathname } = useLocation();
+  useEffect(() => { setOpenProfile(false); }, [pathname]);
+  useEffect(() => {
+    const close = (event) => { if (!profileRef.current?.contains(event.target)) setOpenProfile(false); };
+    const key = (event) => { if (event.key === "Escape") setOpenProfile(false); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", key); };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -32,15 +42,15 @@ function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sy-navbar sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           {/* Logo */}
           <div className="flex items-center">
             <Link
               to="/"
-              className="text-2xl font-extrabold tracking-tight text-blue-600"
+              className="sy-brand text-2xl font-extrabold tracking-tight text-blue-600"
             >
-              See<span className="text-slate-900">YAHH!</span>
+              <span className="sy-brand-mark">S</span> See<span className="text-slate-900">YAHH!</span>
             </Link>
           </div>
 
@@ -48,6 +58,7 @@ function Navbar() {
           <nav className="hidden items-center gap-8 md:flex">
             {navItems.map((item) => (
               <NavLink
+                end={item.path === "/"}
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
@@ -91,10 +102,12 @@ function Navbar() {
                 </Link>
               </>
             ) : (
-              <div className="relative">
+              <div className="relative" ref={profileRef}>
                 {/* Profile button */}
                 <button
                   type="button"
+                  aria-expanded={openProfile}
+                  aria-label="Menu tài khoản"
                   onClick={() => setOpenProfile(!openProfile)}
                   className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
                 >
@@ -124,7 +137,7 @@ function Navbar() {
 
                 {/* Dropdown */}
                 {openProfile && (
-                  <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+                  <div className="sy-profile-menu absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
                     {/* User information */}
                     <div className="border-b border-slate-100 px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -190,7 +203,7 @@ function Navbar() {
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
                       >
                         <Heart size={18} />
-                        Wishlist
+                        Danh sách yêu thích
                       </button>
 
                       {/* Notifications */}
@@ -241,6 +254,7 @@ function Navbar() {
             )}
           </div>
         </div>
+        <nav aria-label="Điều hướng di động" className="sy-mobile-nav md:hidden">{navItems.map(item => <NavLink end={item.path === "/"} key={item.path} to={item.path}>{item.name}</NavLink>)}</nav>
       </header>
     </>
   );

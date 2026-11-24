@@ -66,7 +66,7 @@ export default function Offers() {
       {/* ================= MAIN ================= */}
       <main>
         {/* HERO */}
-        <section className="relative overflow-hidden bg-slate-900">
+        <section className="sy-offers-hero relative overflow-hidden bg-slate-900">
           <div className="absolute inset-0">
             <img
               src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=2000&q=80"
@@ -145,10 +145,10 @@ export default function Offers() {
                     duration: 0.45,
                     delay: index * 0.08,
                   }}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="sy-card group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
                   {/* TOP */}
-                  <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white">
+                  <div className="sy-coupon relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white">
                     <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
                     <div className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-white/10" />
 

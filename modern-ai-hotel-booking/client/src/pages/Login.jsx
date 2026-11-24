@@ -3,6 +3,15 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { requestOtp, verifyOtp } from "../api/authApi";
 
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  Mail,
+  Compass,
+  Sparkles,
+} from "lucide-react";
+
 import SocialLoginButtons from "../components/SocialLoginButtons";
 import { useAuth } from "../context/AuthContext";
 
@@ -26,7 +35,8 @@ function Login() {
   // Đăng nhập bằng OTP
   const [otpStep, setOtpStep] = useState("email");
   const [otpEmail, setOtpEmail] = useState(() => {
-    const value = new URLSearchParams(location.search).get("email")?.trim() || "";
+    const value =
+      new URLSearchParams(location.search).get("email")?.trim() || "";
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : "";
   });
   const [code, setCode] = useState("");
@@ -41,7 +51,8 @@ function Login() {
 
   // Keep the form in sync if a different email arrives through the footer link.
   useEffect(() => {
-    const value = new URLSearchParams(location.search).get("email")?.trim() || "";
+    const value =
+      new URLSearchParams(location.search).get("email")?.trim() || "";
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setOtpEmail(value);
       setOtpStep("email");
@@ -199,185 +210,226 @@ function Login() {
   const isExpired = isCodeStep && secondsLeft === 0;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-lg">
-        {/* HEADER */}
-        <div className="mb-7 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Đăng nhập</h1>
-
-          <p className="mt-2 text-sm text-slate-500">
-            {isCodeStep ? (
-              <>
-                Nhập mã xác nhận đã gửi đến{" "}
-                <span className="font-semibold text-slate-700">{otpEmail}</span>
-              </>
-            ) : (
-              "Đăng nhập vào tài khoản HOTELAI"
-            )}
+    <main className="sy-travel-login">
+      <aside className="sy-travel-visual">
+        <Link to="/" className="sy-travel-logo">
+          <Compass size={25} />
+          <span>
+            SeeYAHH!<small>THE ART OF TRAVEL</small>
+          </span>
+        </Link>
+        <div className="sy-travel-story">
+          <span className="sy-travel-kicker">
+            <Sparkles size={15} /> KHỞI ĐẦU HÀNH TRÌNH
+          </span>
+          <h2>
+            Đi xa hơn.
+            <br />
+            <em>
+              Chạm vào
+              <br />
+              những điều tuyệt vời.
+            </em>
+          </h2>
+          <p>
+            Từ những bờ biển xanh đến những kỳ nghỉ đáng nhớ, thế giới đang chờ
+            bạn khám phá.
           </p>
+          <div className="sy-travel-tags">
+            <span>Khám phá</span>
+            <span>Nghỉ dưỡng</span>
+            <span>Trải nghiệm</span>
+          </div>
         </div>
-
-        {/* THÔNG BÁO LỖI */}
-        {error && (
-          <div
-            role="alert"
-            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
-          >
-            {error}
-          </div>
-        )}
-
-        {/* THÔNG BÁO THÀNH CÔNG */}
-        {success && (
-          <div
-            role="status"
-            className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600"
-          >
-            {success}
-          </div>
-        )}
-
-        {/* ĐĂNG NHẬP BẰNG EMAIL OTP */}
-        {isOtpMethod && !isCodeStep && (
-          <form onSubmit={handleEmailSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="otp-email"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Email
-              </label>
-
-              <input
-                id="otp-email"
-                type="email"
-                value={otpEmail}
-                onChange={(e) => {
-                  setOtpEmail(e.target.value);
-                  setError("");
-                }}
-                placeholder="Nhập email nhận OTP"
-                autoComplete="email"
-                className={inputClass}
-                required
-              />
+        <span className="sy-travel-credit">
+          SeeYAHH! · Every journey tells a story.
+        </span>
+      </aside>
+      <section className="sy-travel-panel">
+        <div className="sy-travel-shell">
+          <Link to="/" className="sy-travel-back">
+            <ArrowLeft size={16} /> Về trang chủ
+          </Link>
+          <div className="sy-travel-card">
+            <div className="sy-travel-icon">
+              <Mail size={24} />
             </div>
+            <span className="sy-travel-eyebrow">YOUR NEXT ESCAPE</span>
+            <h1>{isCodeStep ? "Xác nhận email" : "Chào mừng trở lại."}</h1>
+            <p className="sy-travel-intro">
+              {isCodeStep ? (
+                <>
+                  Nhập mã xác nhận đã gửi đến <strong>{otpEmail}</strong>.
+                </>
+              ) : (
+                "Đăng nhập hoặc bắt đầu hành trình của bạn cùng SeeYAHH!"
+              )}
+            </p>
 
-            <button
-              type="submit"
-              disabled={loading || Boolean(success)}
-              className={primaryButtonClass}
-            >
-              {loading ? "Đang gửi mã..." : "Gửi mã xác nhận"}
-            </button>
-          </form>
-        )}
-
-        {/* NHẬP MÃ OTP */}
-        {isCodeStep && (
-          <>
-            <form onSubmit={handleCodeSubmit} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="otp-code"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Mã xác nhận 6 chữ số
-                </label>
-
-                <input
-                  id="otp-code"
-                  name="code"
-                  value={code}
-                  onChange={handleCodeChange}
-                  placeholder="------"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={OTP_LENGTH}
-                  autoFocus
-                  className={`${inputClass} text-center text-xl font-semibold tracking-[0.5em]`}
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || isExpired || Boolean(success)}
-                className={primaryButtonClass}
+            {/* THÔNG BÁO LỖI */}
+            {error && (
+              <div
+                role="alert"
+                className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
               >
-                {loading ? "Đang xác nhận..." : "Xác nhận và đăng nhập"}
-              </button>
-            </form>
+                {error}
+              </div>
+            )}
 
-            <div className="mt-6 space-y-3 text-center text-sm text-slate-500">
-              {isExpired ? (
-                <p>
-                  Mã đã hết hạn.{" "}
+            {/* THÔNG BÁO THÀNH CÔNG */}
+            {success && (
+              <div
+                role="status"
+                className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600"
+              >
+                {success}
+              </div>
+            )}
+
+            {/* ĐĂNG NHẬP BẰNG EMAIL OTP */}
+            {isOtpMethod && !isCodeStep && (
+              <form onSubmit={handleEmailSubmit} className="sy-travel-form">
+                <div>
+                  <label
+                    htmlFor="otp-email"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Email
+                  </label>
+
+                  <input
+                    id="otp-email"
+                    type="email"
+                    value={otpEmail}
+                    onChange={(e) => {
+                      setOtpEmail(e.target.value);
+                      setError("");
+                    }}
+                    placeholder="Nhập email nhận OTP"
+                    autoComplete="email"
+                    className={inputClass}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || Boolean(success)}
+                  className={primaryButtonClass}
+                >
+                  {loading ? "Đang gửi mã..." : "Gửi mã xác nhận"}{" "}
+                  {!loading && <ArrowRight size={17} aria-hidden="true" />}
+                </button>
+              </form>
+            )}
+
+            {/* NHẬP MÃ OTP */}
+            {isCodeStep && (
+              <>
+                <form onSubmit={handleCodeSubmit} className="sy-travel-form">
+                  <div>
+                    <label
+                      htmlFor="otp-code"
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
+                      Mã xác nhận 6 chữ số
+                    </label>
+
+                    <input
+                      id="otp-code"
+                      name="code"
+                      value={code}
+                      onChange={handleCodeChange}
+                      placeholder="------"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={OTP_LENGTH}
+                      autoFocus
+                      className={`${inputClass} text-center text-xl font-semibold tracking-[0.5em]`}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || isExpired || Boolean(success)}
+                    className={primaryButtonClass}
+                  >
+                    {loading ? "Đang xác nhận..." : "Xác nhận và đăng nhập"}
+                  </button>
+                </form>
+
+                <div className="mt-6 space-y-3 text-center text-sm text-slate-500">
+                  {isExpired ? (
+                    <p>
+                      Mã đã hết hạn.{" "}
+                      <button
+                        type="button"
+                        onClick={sendCode}
+                        disabled={loading || Boolean(success)}
+                        className="font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-60"
+                      >
+                        Gửi lại mã
+                      </button>
+                    </p>
+                  ) : (
+                    <p>
+                      Có thể yêu cầu mã mới sau{" "}
+                      <span className="font-semibold text-slate-700">
+                        {secondsLeft}
+                      </span>{" "}
+                      giây
+                    </p>
+                  )}
+
                   <button
                     type="button"
-                    onClick={sendCode}
+                    onClick={handleBackToEmail}
                     disabled={loading || Boolean(success)}
-                    className="font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-60"
+                    className="font-medium text-slate-600 hover:text-blue-600 disabled:opacity-60"
                   >
-                    Gửi lại mã
+                    Đổi email khác
                   </button>
-                </p>
-              ) : (
-                <p>
-                  Có thể yêu cầu mã mới sau{" "}
-                  <span className="font-semibold text-slate-700">
-                    {secondsLeft}
-                  </span>{" "}
-                  giây
-                </p>
-              )}
+                </div>
+              </>
+            )}
 
-              <button
-                type="button"
-                onClick={handleBackToEmail}
-                disabled={loading || Boolean(success)}
-                className="font-medium text-slate-600 hover:text-blue-600 disabled:opacity-60"
-              >
-                Đổi email khác
-              </button>
+            {/* GOOGLE / FACEBOOK */}
+            {!isCodeStep && (
+              <>
+                <div className="sy-travel-divider flex items-center gap-3 text-xs text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  hoặc tiếp tục với
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <SocialLoginButtons
+                  onSuccess={handleLoginSuccess}
+                  onError={(message) => {
+                    setError(
+                      typeof message === "string"
+                        ? message
+                        : "Đăng nhập mạng xã hội thất bại.",
+                    );
+                  }}
+                  disabled={loading || Boolean(success)}
+                />
+              </>
+            )}
+
+            <div className="sy-travel-secure">
+              <ShieldCheck size={17} />
+              <span>
+                Đăng nhập an toàn bằng mã xác nhận hoặc tài khoản liên kết.
+              </span>
             </div>
-          </>
-        )}
-
-        {/* GOOGLE / FACEBOOK */}
-        {!isCodeStep && (
-          <>
-            <div className="my-6 flex items-center gap-3 text-xs text-slate-400">
-              <span className="h-px flex-1 bg-slate-200" />
-              hoặc
-              <span className="h-px flex-1 bg-slate-200" />
-            </div>
-
-            <SocialLoginButtons
-              onSuccess={handleLoginSuccess}
-              onError={(message) => {
-                setError(
-                  typeof message === "string"
-                    ? message
-                    : "Đăng nhập mạng xã hội thất bại.",
-                );
-              }}
-              disabled={loading || Boolean(success)}
-            />
-          </>
-        )}
-
-        {/* TRANG CHỦ */}
-        <p className="mt-3 text-center text-sm">
-          <Link
-            to="/"
-            className="font-medium text-slate-500 hover:text-blue-600"
-          >
-            Quay về trang chủ
-          </Link>
-        </p>
-      </div>
-    </div>
+          </div>
+          <p className="sy-travel-footer">
+            © 2026 SeeYAHH! · Premium travel experience
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
 

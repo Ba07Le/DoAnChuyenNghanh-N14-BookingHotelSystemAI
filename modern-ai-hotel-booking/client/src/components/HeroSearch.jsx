@@ -62,26 +62,27 @@ function HeroSearch() {
   };
 
   return (
-    <section className="relative">
+    <section className="sy-hero relative">
       {/* Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1623048192713-ad4c69866d91?auto=format&fit=crop&w=2200&q=85')",
+            "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85')",
         }}
       />
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-white/10" />
+      <div className="sy-hero-overlay absolute inset-0" />
 
       {/* Content */}
-      <div className="relative mx-auto max-w-7xl px-6 py-14 md:py-16">
-        <div className="max-w-2xl">
+      <div className="sy-hero-inner relative mx-auto max-w-7xl px-6">
+        <div className="sy-hero-copy max-w-2xl">
+          <p className="sy-eyebrow">KHÁM PHÁ VIỆT NAM · THE WAY YOU STAY</p>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-5xl">
-            Tìm nơi lưu trú hoàn hảo
+            Mỗi hành trình,
             <br />
-            cho chuyến đi của bạn
+            <span>một nơi để nhớ.</span>
           </h1>
 
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
@@ -93,7 +94,7 @@ function HeroSearch() {
         {/* Search box */}
         <form
           onSubmit={handleSearch}
-          className="mt-8 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+          className="sy-search mt-8 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
         >
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr_auto]">
             {/* Destination */}
@@ -199,7 +200,7 @@ function HeroSearch() {
 
               {/* Guests dropdown */}
               {openGuests && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-[320px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+                <div className="absolute right-0 top-full z-50 mt-2 w-[min(320px,calc(100vw-48px))] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
                   {/* Header */}
                   <div className="mb-2 border-b border-slate-100 pb-3">
                     <p className="text-sm font-bold text-slate-900">

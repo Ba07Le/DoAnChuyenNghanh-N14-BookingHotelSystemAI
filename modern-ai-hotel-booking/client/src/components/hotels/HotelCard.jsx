@@ -38,7 +38,7 @@ function HotelCard({ hotel, searchParams = "" }) {
   };
 
   return (
-    <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
+    <article className="sy-card sy-hotel-card group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
       <div className="flex flex-col md:flex-row">
         {/* IMAGE */}
         <div className="relative h-64 w-full overflow-hidden md:h-auto md:w-[310px] md:shrink-0">

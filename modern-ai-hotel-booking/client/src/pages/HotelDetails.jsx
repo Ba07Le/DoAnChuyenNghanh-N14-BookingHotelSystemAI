@@ -65,7 +65,7 @@ export default function HotelDetails() {
           <ArrowLeft size={16} />
           Quay lại danh sách
         </Link>
-        <section className="overflow-hidden rounded-3xl bg-white shadow-sm">
+        <section className="sy-detail-gallery overflow-hidden rounded-3xl bg-white shadow-sm">
           <div className="grid gap-2 p-2 md:grid-cols-[1.6fr_1fr] md:h-[500px]">
             <img
               src={hotel.images?.[0]?.url}
@@ -73,12 +73,12 @@ export default function HotelDetails() {
             />
             <div className="grid grid-cols-2 gap-2">
               <img
-                src={hotel.images?.[0]?.url}
+                src={hotel.images?.[1]?.url || hotel.images?.[0]?.url}
                 className="h-full w-full rounded-2xl object-cover"
               />
               <div className="relative h-full overflow-hidden rounded-2xl">
                 <img
-                  src={hotel.images?.[0]?.url}
+                  src={hotel.images?.[2]?.url || hotel.images?.[0]?.url}
                   className="h-full w-full object-cover"
                 />
                 <button
@@ -146,7 +146,7 @@ export default function HotelDetails() {
             {roomTypes.map((room) => (
               <div
                 key={room._id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="sy-card sy-room-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
               >
                 <div className="flex gap-4">
                   <img

@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
+import ClientLayout, { AccountLayout } from "./layouts/ClientLayout";
+
 // ===============================
 // WISHLIST CONTEXT
 // ===============================
@@ -48,39 +50,41 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 function App() {
   return (
     <Routes>
-      {/* PUBLIC */}
-      <Route path="/" element={<Home />} />
-      <Route path="/hotels" element={<Hotels />} />
-      <Route path="/hotels/:slug" element={<HotelDetails />} />
-      <Route path="/destinations" element={<Destinations />} />
-      <Route path="/destinations/:slug" element={<DestinationDetails />} />
-      <Route path="/offers" element={<Offers />} />
+      <Route element={<ClientLayout />}>
+        {/* PUBLIC */}
+        <Route path="/" element={<Home />} />
+        <Route path="/hotels" element={<Hotels />} />
+        <Route path="/hotels/:slug" element={<HotelDetails />} />
+        <Route path="/destinations" element={<Destinations />} />
+        <Route path="/destinations/:slug" element={<DestinationDetails />} />
+        <Route path="/offers" element={<Offers />} />
 
-      {/* AUTH */}
-      <Route path="/login" element={<Login />} />
+        {/* AUTH */}
+        <Route path="/login" element={<Login />} />
+
+        {/* CUSTOMER */}
+        <Route element={<AccountLayout />}>
+          <Route path="/profile" element={<Profile />} />
+
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/notifications" element={<Notifications />} />
+
+          <Route path="/bookings" element={<Bookings />} />
+          <Route path="/my-reviews" element={<MyReviews />} />
+          <Route path="/reviews" element={<MyReviews />} />
+          <Route path="/reviews/mine" element={<MyReviews />} />
+        </Route>
+        {/* BOOKING - GUEST & CUSTOMER */}
+        <Route path="/booking" element={<Booking />} />
+        <Route path="/booking/lookup" element={<BookingLookup />} />
+        <Route path="/booking/success" element={<BookingSuccess />} />
+
+        {/* PAYMENT */}
+        <Route path="/payment/result" element={<PaymentResult />} />
+        <Route path="/payment-result" element={<PaymentResult />} />
+      </Route>
       <Route path="/manager/login" element={<ManagerLogin />} />
       <Route path="/staff/login" element={<ManagerLogin />} />
-
-      {/* CUSTOMER */}
-      <Route path="/profile" element={<Profile />} />
-
-      <Route path="/wishlist" element={<Wishlist />} />
-      <Route path="/notifications" element={<Notifications />} />
-
-      {/* BOOKING - GUEST & CUSTOMER */}
-      <Route path="/booking" element={<Booking />} />
-      <Route path="/bookings" element={<Bookings />} />
-      <Route path="/booking/lookup" element={<BookingLookup />} />
-      <Route path="/booking/success" element={<BookingSuccess />} />
-
-      {/* PAYMENT */}
-      <Route path="/payment/result" element={<PaymentResult />} />
-      <Route path="/payment-result" element={<PaymentResult />} />
-
-      {/* REVIEWS */}
-      <Route path="/my-reviews" element={<MyReviews />} />
-      <Route path="/reviews" element={<MyReviews />} />
-      <Route path="/reviews/mine" element={<MyReviews />} />
 
       {/* ADMIN */}
       <Route path="/dashboard" element={<Navigate to="/admin" replace />} />

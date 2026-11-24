@@ -96,7 +96,7 @@ function Wishlist() {
     <div>
       {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Wishlist</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Danh sách yêu thích</h1>
 
         <p className="mt-2 text-sm text-slate-500">
           Những nơi lưu trú bạn đang quan tâm.
@@ -155,7 +155,7 @@ function Wishlist() {
                 return (
                   <article
                     key={id}
-                    className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+                    className="sy-card overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md"
                   >
                     {/* ẢNH KHÁCH SẠN */}
                     {imageUrl ? (

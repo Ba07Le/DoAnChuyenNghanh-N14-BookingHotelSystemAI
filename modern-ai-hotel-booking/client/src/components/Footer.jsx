@@ -15,7 +15,7 @@ function Footer() {
   };
 
   return (
-    <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
+    <footer className="sy-footer border-t border-slate-200 bg-slate-950 text-slate-300">
       {/* Quick login for visitors only; no newsletter subscription API. */}
       {!isAuthenticated && <div className="border-b border-slate-800">
         <div className="mx-auto max-w-7xl px-6 py-12">
@@ -66,8 +66,7 @@ function Footer() {
               to="/"
               className="inline-flex items-center text-2xl font-bold tracking-tight text-white"
             >
-              HOTEL
-              <span className="text-blue-500">AI</span>
+              See<span className="sy-footer-accent">YAHH!</span>
             </Link>
 
             <p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">

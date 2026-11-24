@@ -127,7 +127,7 @@ const FilterDrawer = ({ isOpen, onClose, onApply, value }) => {
       {/* Drawer */}
       <aside
         className="
-          absolute left-0 top-0 h-full
+          sy-filter-drawer absolute left-0 top-0 h-full
           w-[390px] max-w-[92vw]
           bg-white shadow-2xl
           animate-[slideIn_.3s_ease-out]

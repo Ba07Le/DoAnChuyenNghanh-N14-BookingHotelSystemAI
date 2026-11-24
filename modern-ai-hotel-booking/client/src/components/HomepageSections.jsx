@@ -4,6 +4,11 @@ import {
   MapPin,
   Star,
   Building2,
+  Palmtree,
+  House,
+  Building,
+  BedDouble,
+  Castle,
   Percent,
   Sparkles,
   BadgeCheck,
@@ -61,7 +66,7 @@ export function PopularDestinations({
             <Link
               key={destination.city}
               to={"/hotels?city=" + encodeURIComponent(destination.city)}
-              className="group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="sy-card group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -154,7 +159,7 @@ export function FeaturedHotels({
                 <Link
   key={hotel._id}
   to={"/hotels/" + hotel.slug}
-  className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+  className="sy-card group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
 >
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <img
@@ -264,10 +269,10 @@ export function HotelTypes({
             <Link
               key={type.type}
               to={"/hotels?type=" + encodeURIComponent(type.type)}
-              className="group block cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
+              className="sy-card sy-type-card group block cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
             >
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-                <Building2 size={23} />
+                {(() => { const Icon = ({ HOTEL: Building2, RESORT: Palmtree, VILLA: Castle, APARTMENT: Building, HOMESTAY: House, BOUTIQUE: BedDouble })[type.type] || Building2; return <Icon size={23} />; })()}
               </div>
 
               <h3 className="mt-4 font-semibold text-slate-900">
@@ -326,7 +331,7 @@ export function FeaturedDeals({
             {deals.map((deal) => (
               <div
                 key={deal._id}
-                  className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="sy-card group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">

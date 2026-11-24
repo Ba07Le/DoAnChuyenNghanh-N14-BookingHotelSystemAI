@@ -9,6 +9,7 @@ import {
 import { getMyBookings, cancelBooking } from "../api/bookingApi";
 import { createReview, getMyReviews } from "../api/reviewApi";
 import ReviewForm from "../components/ReviewForm";
+const statusLabels = { PENDING: "Chờ xác nhận", PENDING_PAYMENT: "Chờ thanh toán", CONFIRMED: "Đã xác nhận", CHECKED_IN: "Đã nhận phòng", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
 const money = (n) => new Intl.NumberFormat("vi-VN").format(n);
 const fmt = (d) => new Date(d).toLocaleDateString("vi-VN");
 export default function Bookings() {
@@ -43,7 +44,7 @@ export default function Bookings() {
   };
   return (
     <div className="bg-slate-50">
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="sy-bookings">
         <h1 className="text-3xl font-bold">Đơn đặt phòng của tôi</h1>
         <p className="mt-2 text-slate-500">
           Theo dõi và quản lý các chuyến đi của bạn.
@@ -63,12 +64,13 @@ export default function Bookings() {
             {data.map((b) => (
               <article
                 key={b._id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="sy-card rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
               >
                 <div className="flex flex-col gap-5 md:flex-row">
                   <img
                     src={b.hotelId?.images?.[0]?.url}
-                    className="h-40 w-full rounded-xl object-cover md:w-56"
+                    alt={b.hotelId?.name || "Khách sạn"}
+                    className="h-40 w-full rounded-xl object-cover md:w-40 xl:w-48"
                   />
                   <div className="flex-1">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -81,9 +83,9 @@ export default function Bookings() {
                         </h2>
                       </div>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${b.status === "CANCELLED" ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${b.status === "CANCELLED" ? "bg-red-50 text-red-600" : ["PENDING", "PENDING_PAYMENT"].includes(b.status) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-600"}`}
                       >
-                        {b.status}
+                        {statusLabels[b.status] || b.status}
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-slate-500">
@@ -103,7 +105,7 @@ export default function Bookings() {
                         <p className="text-xs text-slate-400">Tổng tiền</p>
                         <b className="text-xl">{money(b.totalAmount)}đ</b>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {b.status === "COMPLETED" && !reviewedIds.has(String(b._id)) && (
                           <button type="button" onClick={() => { setReviewError(""); setReviewBooking(b); }} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
                             Viết đánh giá
