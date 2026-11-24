@@ -83,14 +83,14 @@ function CouponForm({ coupon, onClose }) {
         </div>
 
         <div className="flex flex-wrap gap-6 text-sm text-slate-700">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={f.status === "ACTIVE"} onChange={(e) => set({ status: e.target.checked ? "ACTIVE" : "INACTIVE" })} />Kích hoạt</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={f.featured} onChange={(e) => set({ featured: e.target.checked })} />Nổi bật trên trang chủ</label>
+          <label className="flex items-center gap-2"><input className="accent-[#087e83]" type="checkbox" checked={f.status === "ACTIVE"} onChange={(e) => set({ status: e.target.checked ? "ACTIVE" : "INACTIVE" })} />Kích hoạt</label>
+          <label className="flex items-center gap-2"><input className="accent-[#087e83]" type="checkbox" checked={f.featured} onChange={(e) => set({ featured: e.target.checked })} />Nổi bật trên trang chủ</label>
         </div>
 
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={busy} className="rounded-xl border px-4 py-2 text-sm font-semibold text-slate-600">Đóng</button>
-          <button type="submit" disabled={busy} className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="flex items-center gap-2 rounded-xl bg-[#087e83] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
             {busy && <Loader2 size={15} className="animate-spin" />}{editing ? "Lưu thay đổi" : "Tạo mã"}
           </button>
         </div>
@@ -105,7 +105,7 @@ const Usage = ({ c }) => {
   return (
     <div className="w-28">
       <p className="text-xs text-slate-500">{c.usedCount}/{c.usageLimit} lượt</p>
-      <div className="mt-1 h-1.5 rounded-full bg-slate-100"><div className={`h-full rounded-full ${p >= 100 ? "bg-red-500" : "bg-blue-500"}`} style={{ width: `${p}%` }} /></div>
+      <div className="mt-1 h-1.5 rounded-full bg-slate-100"><div className={`h-full rounded-full ${p >= 100 ? "bg-red-500" : "bg-[#118e91]"}`} style={{ width: `${p}%` }} /></div>
     </div>
   );
 };
@@ -126,14 +126,14 @@ export default function AdminCoupons() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><h1 className="text-2xl font-bold text-slate-900">Mã giảm giá</h1>
           <p className="text-sm text-slate-500">Mã đã có người dùng chỉ được tắt, không xoá, để lịch sử đặt phòng luôn đối chiếu được.</p></div>
-        <button onClick={() => setForm({})} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"><Plus size={16} />Tạo mã</button>
+        <button onClick={() => setForm({})} className="inline-flex items-center gap-2 rounded-xl bg-[#087e83] px-4 py-2 text-sm font-semibold text-white"><Plus size={16} />Tạo mã</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap rounded-xl bg-white p-1 shadow-sm">
           {TABS.map((t) => (
-            <button key={t.key} onClick={() => set({ state: t.key })} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${f.state === t.key ? "bg-blue-600 text-white" : "text-slate-600"}`}>
-              {t.label} <span className={`ml-1 text-xs ${f.state === t.key ? "text-blue-100" : "text-slate-400"}`}>{t.key ? counts[t.key] ?? 0 : total}</span>
+            <button key={t.key} onClick={() => set({ state: t.key })} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${f.state === t.key ? "bg-[#087e83] text-white" : "text-slate-600"}`}>
+              {t.label} <span className={`ml-1 text-xs ${f.state === t.key ? "text-[#d0ebe8]" : "text-slate-400"}`}>{t.key ? counts[t.key] ?? 0 : total}</span>
             </button>
           ))}
         </div>

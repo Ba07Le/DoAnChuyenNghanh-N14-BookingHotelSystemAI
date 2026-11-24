@@ -7,7 +7,8 @@ function BookingSummary({ quote, form, loading }) {
   const hasDates = Boolean(form.checkIn && form.checkOut);
 
   return (
-    <aside className="sy-booking-summary rounded-3xl bg-slate-900 p-5 sm:p-6 text-white shadow-xl shadow-slate-900/10 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
+    <aside className="sy-booking-summary rounded-3xl bg-slate-900 p-5 sm:p-6 text-white shadow-xl shadow-slate-900/10 sy-co-summary">
+      <div className="sy-co-summary-title">YOUR RESERVATION <h2>Tóm tắt đặt phòng</h2></div>
       {hotel.image && (
         <div className="relative overflow-hidden rounded-2xl">
           <img
@@ -30,7 +31,7 @@ function BookingSummary({ quote, form, loading }) {
       <ul className="mt-3.5 space-y-2 text-xs sm:text-sm text-slate-300">
         <li className="flex items-center gap-2.5">
           <CalendarDays size={16} className="shrink-0 text-blue-400" />
-          <span className="truncate">
+          <span className="break-words">
             {hasDates
               ? `${formatDate(form.checkIn)} → ${formatDate(form.checkOut)}${nights ? ` (${nights} đêm)` : ""}`
               : "Chọn ngày nhận và trả phòng"}
@@ -48,7 +49,7 @@ function BookingSummary({ quote, form, loading }) {
           <li className="flex items-center gap-2.5">
             <Clock3 size={16} className="shrink-0 text-blue-400" />
             <span>
-              Nhận {hotel.checkInTime} · Trả {hotel.checkOutTime}
+              Nhận từ {hotel.checkInTime} · Trả trước {hotel.checkOutTime}
             </span>
           </li>
         )}
@@ -56,7 +57,7 @@ function BookingSummary({ quote, form, loading }) {
         {hotel.cancellationPolicy && (
           <li className="flex items-center gap-2.5">
             <ShieldCheck size={16} className="shrink-0 text-emerald-400" />
-            <span className="truncate">{hotel.cancellationPolicy}</span>
+            <span className="break-words">{hotel.cancellationPolicy}</span>
           </li>
         )}
       </ul>
@@ -84,7 +85,7 @@ function BookingSummary({ quote, form, loading }) {
 
             <div className="mt-3 flex items-baseline justify-between gap-4">
               <span className="text-xs sm:text-sm text-slate-400">Tổng cộng</span>
-              <span className="text-2xl font-bold text-white">{formatMoney(pricing.total)}</span>
+              <span className="sy-co-total text-2xl font-bold text-white">{formatMoney(pricing.total)}</span>
             </div>
           </>
         ) : (
@@ -100,7 +101,7 @@ function BookingSummary({ quote, form, loading }) {
           </>
         )}
 
-        {loading && <p className="mt-2 text-xs text-blue-400 animate-pulse">Đang cập nhật giá...</p>}
+        {loading && <p className="mt-2 text-xs text-blue-400 animate-pulse">Giá chưa được xác nhận lại. Vui lòng kiểm tra thông tin đặt phòng.</p>}
       </div>
     </aside>
   );

@@ -27,13 +27,13 @@ function GuestForm({ contact, errors, isCustomer, onChange }) {
   const handleChange = (e) => onChange(e.target.name, e.target.value);
 
   return (
-    <section>
+    <section className="sy-co-guest">
       <h2 className="text-lg font-semibold text-slate-900">Thông tin người nhận phòng</h2>
 
       <p className="mt-1 text-sm text-slate-500">
         {isCustomer ? (
           <>
-            Thông tin được cá nhân nhận phòng của bạn. Vui lòng chỉnh sửa nếu bạn đặt giúp người khác.{" "}
+            Thông tin được điền từ hồ sơ cá nhân của bạn. Vui lòng chỉnh sửa nếu bạn đặt giúp người khác.{" "}
             <Link to="/profile" target="_blank" rel="noreferrer" className="font-medium text-blue-600 hover:underline">
               Cập nhật hồ sơ
             </Link>

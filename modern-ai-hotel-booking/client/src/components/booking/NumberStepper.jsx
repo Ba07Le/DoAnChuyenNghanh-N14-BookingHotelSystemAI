@@ -6,7 +6,7 @@ const buttonClass =
 // Ô chọn số lượng bằng nút - / + (số phòng, người lớn, trẻ em)
 function NumberStepper({ label, hint, value, min, max, onChange }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-5">
+    <div className="sy-co-stepper rounded-2xl bg-slate-50 p-5">
       <p className="text-sm font-medium text-slate-700">{label}</p>
 
       <div className="mt-3 flex items-center justify-between">

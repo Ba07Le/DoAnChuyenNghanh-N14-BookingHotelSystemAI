@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Users, TicketPercent, ShieldCheck, LockKeyhole } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
@@ -30,7 +30,7 @@ import {
 function DateField({ label, value, min, onChange }) {
   return (
     <label className="block rounded-2xl bg-slate-50 p-5 text-sm font-medium text-slate-700">
-      {label}
+      <span className="sy-co-label"><CalendarDays size={17} />{label}</span>
       <input
         type="date"
         required
@@ -355,7 +355,7 @@ function Booking() {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="sy-co-page mx-auto px-6 py-8">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -365,20 +365,17 @@ function Booking() {
           Quay lại
         </button>
 
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
-          <form
-            onSubmit={handleSubmit}
-            className="sy-checkout-form space-y-8 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-8"
-          >
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">
-                Xác nhận đặt phòng
-              </h1>
-              <p className="mt-2 text-sm text-slate-500">
-                {quote.hotel.name} · {quote.roomType.name}
-              </p>
-            </div>
-
+        <header className="sy-co-hero">
+          <div><span className="sy-co-kicker">THE ART OF TRAVEL · YOUR RESERVATION</span>
+          <h1>Hoàn thiện kỳ nghỉ <em>của bạn.</em></h1>
+          <p>{quote.hotel.name} · {quote.roomType.name}</p></div>
+          <div className="sy-co-hero-mark"><ShieldCheck size={27}/><span>Xác nhận đặt phòng</span></div>
+        </header>
+        <div className="sy-co-steps" aria-label="Các phần của biểu mẫu">
+          <a href="#sy-co-stay"><span>01</span> Lịch trình</a><a href="#sy-co-guest"><span>02</span> Thông tin khách</a><a href="#sy-co-payment"><span>03</span> Thanh toán</a>
+        </div>
+        <div className="sy-co-grid">
+          <form id="sy-co-form" onSubmit={handleSubmit} className="sy-checkout-form sy-co-form">
             {!isAuthenticated && (
               <Notice type="info">
                 Bạn đang đặt phòng với tư cách khách.{" "}
@@ -394,7 +391,8 @@ function Booking() {
             )}
 
             {/* Ngày nhận và trả phòng */}
-            <section>
+            <section id="sy-co-stay" className="sy-co-section">
+              <div className="sy-co-heading"><CalendarDays size={23}/><div><small>01 · YOUR STAY</small><h2>Lịch trình lưu trú</h2><p>Chọn ngày nhận và trả phòng của bạn.</p></div></div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <DateField
                   label="Nhận phòng"
@@ -423,7 +421,8 @@ function Booking() {
             </section>
 
             {/* Số phòng và số khách */}
-            <section>
+            <section className="sy-co-section">
+              <div className="sy-co-heading"><Users size={23}/><div><h2>Phòng và khách lưu trú</h2><p>Điều chỉnh theo nhu cầu chuyến đi.</p></div></div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <NumberStepper
                   label="Số phòng"
@@ -461,15 +460,18 @@ function Booking() {
               )}
             </section>
 
+            <div id="sy-co-guest" className="sy-co-section"><div className="sy-co-heading"><Users size={23}/><small>02 · GUEST DETAILS</small></div>
             <GuestForm
               contact={contact}
               errors={errors}
               isCustomer={isAuthenticated}
               onChange={handleContactChange}
             />
+            </div>
 
             {/* Mã ưu đãi */}
-            <section>
+            <section className="sy-co-section">
+              <div className="sy-co-heading"><TicketPercent size={23}/><small>TRAVEL PRIVILEGES</small></div>
               <h2 className="text-lg font-semibold text-slate-900">
                 Mã ưu đãi
               </h2>
@@ -519,18 +521,21 @@ function Booking() {
               </div>
             </section>
 
+            <div id="sy-co-payment" className="sy-co-section"><div className="sy-co-heading"><LockKeyhole size={23}/><small>03 · PAYMENT</small></div>
             <PaymentMethodSelect
               value={form.paymentMethod}
               onChange={(paymentMethod) => updateForm({ paymentMethod })}
             />
+            </div>
 
             {submitError && <Notice>{submitError}</Notice>}
 
-            <div>
+            <div className="sy-co-submit">
+              <p><ShieldCheck size={18}/> Kiểm tra lại ngày, thông tin khách và tổng tiền trước khi xác nhận.</p>
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full rounded-2xl bg-blue-600 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="sy-co-confirm w-full rounded-2xl bg-blue-600 py-4 text-base font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting
                   ? "Đang xử lý..."
@@ -547,8 +552,8 @@ function Booking() {
             </div>
           </form>
 
-          <div className="lg:sticky lg:top-20 lg:self-start">
-            <BookingSummary quote={quote} form={form} loading={quoteLoading} />
+          <div className="sy-co-sidebar">
+            <BookingSummary quote={quote} form={form} loading={quoteLoading || Boolean(result.error)} />
           </div>
         </div>
       </main>

@@ -1,37 +1,47 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Search, Compass, Building2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, MapPin, Search, Compass, Building2, X, RefreshCw } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { getDestinations } from '../api/destinationApi';
+
 const regions = ['Tất cả','Miền Bắc','Miền Trung','Miền Nam','Tây Nguyên'];
+const normalize = value => String(value ?? '').toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
 export default function Destinations(){
   const [items,setItems] = useState([]);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
   const [search,setSearch] = useState('');
   const [region,setRegion] = useState('Tất cả');
-  useEffect(()=>{let active=true;getDestinations().then(data=>{if(active)setItems(data||[])}).catch(err=>{if(active)setError(err.response?.data?.message||'Không thể tải điểm đến.')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[]);
-  const filtered = useMemo(()=>items.filter(x=>(region==='Tất cả'||x.region===region)&&x.name?.toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi'))),[items,region,search]);
-  return <div className="min-h-screen bg-slate-50"><Navbar/>
-    <section className="sy-destination-hero bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 px-6 py-20 text-white"><div className="mx-auto max-w-7xl">
-      <p className="mb-3 text-sm font-semibold uppercase tracking-[.2em] text-blue-200">Khám phá Việt Nam</p>
-      <h1 className="max-w-3xl text-4xl font-bold md:text-5xl">Mỗi điểm đến, một câu chuyện riêng</h1>
-      <p className="mt-4 max-w-xl text-blue-100">Khám phá phong cảnh, văn hóa, trải nghiệm và tìm khách sạn phù hợp cho hành trình của bạn.</p>
-      <label className="mt-8 flex max-w-xl items-center gap-3 rounded-xl bg-white px-4 py-3 text-slate-700"><Search size={19}/><input aria-label="Tìm điểm đến" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Bạn muốn khám phá nơi nào?" className="w-full bg-transparent outline-none"/></label>
-    </div></section>
-    <main className="mx-auto max-w-7xl px-6 py-14"><h2 className="text-3xl font-bold text-slate-900">Điểm đến nổi bật</h2><p className="mt-2 text-slate-500">Thông tin điểm đến được quản lý và cập nhật từ hệ thống.</p>
-      <div className="my-7 flex flex-wrap gap-2">{regions.map(r=><button key={r} onClick={()=>setRegion(r)} className={`rounded-xl px-4 py-2.5 text-sm font-medium ${region===r?'bg-blue-600 text-white':'border bg-white text-slate-600 hover:bg-blue-50'}`}>{r}</button>)}</div>
-      {loading?<p className="py-16 text-center text-slate-500">Đang tải điểm đến...</p>:error?<p role="alert" className="rounded-xl bg-red-50 p-6 text-red-700">{error}</p>:filtered.length===0?<p className="rounded-xl border bg-white p-12 text-center text-slate-500">Chưa có điểm đến phù hợp. Vui lòng chọn khu vực khác.</p>:
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{filtered.map((d,i)=><motion.article key={d._id} initial={{opacity:0,y:14}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:Math.min(i*.04,.25)}} className="sy-card overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg">
-        <Link to={`/destinations/${encodeURIComponent(d.slug)}`} aria-label={`Khám phá ${d.name}`} className="relative block h-56 overflow-hidden bg-gradient-to-br from-cyan-600 to-blue-950">
-          {d.image?.url&&<img src={d.image.url} alt={d.name} className="h-full w-full object-cover transition duration-500 hover:scale-105"/>}<div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
-          <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700">{d.region||'Việt Nam'}</span>
-          <h3 className="absolute bottom-4 left-4 flex items-center gap-2 text-xl font-bold text-white"><MapPin size={19}/>{d.name}</h3>
-        </Link><div className="p-5"><p className="line-clamp-2 min-h-12 text-sm leading-6 text-slate-600">{d.shortDescription||'Khám phá thông tin và lựa chọn lưu trú tại điểm đến này.'}</p>
-        <div className="mt-4 flex items-center justify-between border-t pt-4"><span className="flex items-center gap-1 text-xs text-slate-500"><Building2 size={15}/>{d.hotelCount||0} khách sạn</span><Link className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800" to={`/destinations/${encodeURIComponent(d.slug)}`}>Khám phá <ArrowRight size={16}/></Link></div></div>
-      </motion.article>)}</div>}
-      <div className="mt-16 rounded-3xl bg-blue-50 p-8 md:p-12"><div className="flex items-center gap-3 text-blue-700"><Compass/><span className="font-semibold">Hành trình của bạn</span></div><h2 className="mt-3 text-2xl font-bold text-slate-900">Chọn điểm đến, tìm nơi ở lý tưởng</h2><p className="mt-3 text-slate-600">Khám phá phong cảnh và hoạt động địa phương, sau đó tìm khách sạn và đặt phòng phù hợp.</p><Link to="/hotels" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">Tìm khách sạn <ArrowRight size={18}/></Link></div>
+  const [retry,setRetry] = useState(0);
+  useEffect(()=>{let active=true;setLoading(true);setError('');getDestinations().then(data=>{if(active)setItems(data||[])}).catch(err=>{if(active)setError(err.response?.data?.message||'Không thể tải điểm đến.')}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[retry]);
+  const filtered = useMemo(()=>items.filter(x=>(region==='Tất cả'||x.region===region)&&normalize(x.name).includes(normalize(search.trim()))),[items,region,search]);
+  const heroImage=items.find(d=>d.image?.url)?.image?.url;
+  const reset=()=>{setSearch('');setRegion('Tất cả')};
+  return <div className="sy-dest-page min-h-screen"><Navbar/>
+    <header className="sy-dest-hero">
+      {heroImage&&<img src={heroImage} alt="" className="sy-dest-hero-photo" onError={e=>{e.currentTarget.hidden=true}}/>}
+      <div className="sy-dest-width sy-dest-hero-copy">
+        <div className="sy-dest-crumb"><Link to="/">Trang chủ</Link><span>/</span><span>Điểm đến</span></div>
+        <p className="sy-dest-kicker">DISCOVER VIETNAM · THE ART OF TRAVEL</p>
+        <h1>Mỗi vùng đất,<br/><em>một câu chuyện riêng.</em></h1>
+        <p>Khám phá phong cảnh, văn hóa và những trải nghiệm đáng nhớ. Tìm nơi lưu trú cho hành trình của riêng bạn.</p>
+        <div className="sy-dest-hero-tag"><Compass size={19}/><span>Việt Nam · Hành trình bất tận</span></div>
+      </div>
+    </header>
+    <main className="sy-dest-width sy-dest-main">
+      <div className="sy-dest-search"><Search size={23}/><label className="sy-dest-search-field"><span>Tìm điểm đến</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Bạn muốn khám phá nơi nào?" /></label>{search&&<button type="button" aria-label="Xóa tìm kiếm" onClick={()=>setSearch('')}><X size={19}/></button>}<button type="button" className="sy-dest-primary" onClick={()=>document.getElementById('sy-dest-results')?.scrollIntoView({block:'start'})}>Khám phá <ArrowRight size={18}/></button></div>
+      <section id="sy-dest-results" className="sy-dest-results">
+        <div className="sy-dest-heading"><div><p className="sy-dest-kicker">01 — PLACES TO GO</p><h2>Việt Nam, đẹp theo từng miền.</h2><p>Chọn điểm đến cho kỳ nghỉ tiếp theo của bạn.</p></div><span role="status" className="sy-dest-count">{loading?'Đang tải...':error?'':`${filtered.length} điểm đến`}</span></div>
+        <div className="sy-dest-filters" role="group" aria-label="Lọc theo khu vực">{regions.map(r=><button type="button" key={r} aria-pressed={region===r} onClick={()=>setRegion(r)}>{r}<span>{items.filter(d=>r==='Tất cả'||d.region===r).length}</span></button>)}</div>
+        {loading?<div className="sy-dest-grid" aria-busy="true">{Array.from({length:6},(_,i)=><div key={i} className="sy-dest-skeleton"/>)}</div>:error?<div className="sy-dest-empty" role="alert"><Compass size={34}/><h3>Không thể tải điểm đến</h3><p>{error}</p><button className="sy-dest-primary" onClick={()=>setRetry(n=>n+1)}><RefreshCw size={16}/> Thử lại</button></div>:filtered.length===0?<div className="sy-dest-empty"><Search size={34}/><h3>Chưa tìm thấy điểm đến</h3><p>Hãy thử tên địa danh khác hoặc thay đổi khu vực.</p><button className="sy-dest-primary" onClick={reset}>Xóa bộ lọc</button></div>:
+        <div className={`sy-dest-grid ${filtered.length>=4?'sy-dest-editorial':''}`}>{filtered.map((d,i)=><article key={d._id||d.slug} className="sy-dest-card" style={{animationDelay:`${Math.min(i*35,210)}ms`}}>
+          <Link to={`/destinations/${encodeURIComponent(d.slug)}`} aria-label={`Khám phá ${d.name}`} className="sy-dest-media">
+            {d.image?.url&&<img src={d.image.url} alt={d.name} loading={i<3?'eager':'lazy'} onError={e=>{e.currentTarget.hidden=true}}/>}
+            <span className="sy-dest-region"><MapPin size={13}/>{d.region||'Việt Nam'}</span><span className="sy-dest-media-title"><span>KHÁM PHÁ</span><h3>{d.name}</h3></span><span className="sy-dest-arrow"><ArrowUpRight size={20}/></span>
+          </Link><div className="sy-dest-card-copy"><p>{d.shortDescription||'Khám phá thông tin và lựa chọn lưu trú tại điểm đến này.'}</p><div><span><Building2 size={16}/>{d.hotelCount||0} khách sạn</span><Link to={`/destinations/${encodeURIComponent(d.slug)}`}>Khám phá <ArrowRight size={16}/></Link></div></div>
+        </article>)}</div>}
+      </section>
+      <section className="sy-dest-cta"><div><p className="sy-dest-kicker">02 — YOUR NEXT ESCAPE</p><h2>Điểm đến đã chọn.<br/><em>Kỳ nghỉ đang chờ.</em></h2><p>Khám phá nơi lưu trú phù hợp với hành trình của bạn.</p><Link to="/hotels" className="sy-dest-primary">Tìm khách sạn <ArrowUpRight size={18}/></Link></div><div className="sy-dest-cta-art" aria-hidden="true">{heroImage&&<img src={heroImage} alt="" loading="lazy" onError={e=>{e.currentTarget.hidden=true}}/>}<Compass size={90}/></div></section>
     </main><Footer/></div>;
 }

@@ -39,13 +39,19 @@ function BookingLookup() {
 
   const runLookup = useCallback(async (code, email) => {
     try {
-      const { data } = await lookupBooking({ code: code.trim(), email: email.trim() });
+      const { data } = await lookupBooking({
+        code: code.trim(),
+        email: email.trim(),
+      });
 
       setBooking(data);
       setError("");
     } catch (err) {
       setBooking(null);
-      setError(err.response?.data?.message || "Không thể tra cứu lúc này. Vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Không thể tra cứu lúc này. Vui lòng thử lại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -73,9 +79,14 @@ function BookingLookup() {
 
       <main className="mx-auto max-w-xl px-6 py-12">
         <h1 className="text-3xl font-bold text-slate-900">Tra cứu đặt phòng</h1>
-        <p className="mt-2 text-sm text-slate-500">Nhập mã đặt phòng và email đã dùng khi đặt phòng.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Nhập mã đặt phòng và email đã dùng khi đặt phòng.
+        </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 space-y-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
+        >
           <label className="block text-sm font-medium text-slate-700">
             Mã đặt phòng
             <input
@@ -111,25 +122,37 @@ function BookingLookup() {
         </form>
 
         {error && (
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
         )}
 
         {booking && (
           <section className="mt-6 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             {booking.hotel?.images?.[0]?.url && (
-              <img src={booking.hotel.images[0].url} alt={booking.hotel.name} className="h-44 w-full object-cover" />
+              <img
+                src={booking.hotel.images[0].url}
+                alt={booking.hotel.name}
+                className="h-44 w-full object-cover"
+              />
             )}
 
             <div className="p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">{booking.bookingCode}</p>
-                  <h2 className="mt-1 text-xl font-bold text-slate-900">{booking.hotel?.name}</h2>
+                  <p className="text-xs font-semibold text-blue-600">
+                    {booking.bookingCode}
+                  </p>
+                  <h2 className="mt-1 text-xl font-bold text-slate-900">
+                    {booking.hotel?.name}
+                  </h2>
                 </div>
 
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    booking.status === "CANCELLED" ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                    booking.status === "CANCELLED"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-emerald-50 text-emerald-600"
                   }`}
                 >
                   {BOOKING_STATUS_LABELS[booking.status] ?? booking.status}
@@ -137,24 +160,42 @@ function BookingLookup() {
               </div>
 
               <dl className="mt-4 divide-y divide-slate-100">
-                <Row label="Loại phòng" value={`${booking.roomType?.name} × ${booking.rooms}`} />
+                <Row
+                  label="Loại phòng"
+                  value={`${booking.roomType?.name} × ${booking.rooms}`}
+                />
                 <Row label="Nhận phòng" value={formatDate(booking.checkIn)} />
                 <Row label="Trả phòng" value={formatDate(booking.checkOut)} />
-                <Row label="Số khách" value={booking.guests.adults + booking.guests.children} />
+                <Row
+                  label="Số khách"
+                  value={booking.guests.adults + booking.guests.children}
+                />
                 <Row label="Người nhận phòng" value={booking.guestName} />
                 <Row
                   label="Thanh toán"
                   value={`${PAYMENT_METHOD_LABELS[booking.payment?.method] ?? "—"} · ${
-                    PAYMENT_STATUS_LABELS[booking.paymentStatus] ?? booking.paymentStatus
+                    PAYMENT_STATUS_LABELS[booking.paymentStatus] ??
+                    booking.paymentStatus
                   }`}
                 />
-                {booking.discount > 0 && <Row label={`Giảm giá (${booking.couponCode})`} value={`-${formatMoney(booking.discount)}`} />}
-                <Row label="Tổng tiền" value={formatMoney(booking.totalAmount)} />
+                {booking.discount > 0 && (
+                  <Row
+                    label={`Giảm giá (${booking.couponCode})`}
+                    value={`-${formatMoney(booking.discount)}`}
+                  />
+                )}
+                <Row
+                  label="Tổng tiền"
+                  value={formatMoney(booking.totalAmount)}
+                />
               </dl>
 
               <p className="mt-4 text-xs text-slate-500">
                 Cần huỷ hoặc thay đổi đơn? Vui lòng liên hệ khách sạn, hoặc{" "}
-                <Link to="/login" className="font-medium text-blue-600 hover:underline">
+                <Link
+                  to="/login"
+                  className="font-medium text-blue-600 hover:underline"
+                >
                   đăng nhập
                 </Link>{" "}
                 bằng tài khoản đã đặt phòng.

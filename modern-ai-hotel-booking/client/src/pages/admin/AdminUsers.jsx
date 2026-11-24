@@ -75,7 +75,7 @@ export default function AdminUsers() {
                   const blocked = u.status === "BLOCKED";
                   return (
                     <tr key={u._id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3"><button onClick={() => setDetailId(u._id)} className="text-left"><p className="font-semibold text-slate-900 hover:text-blue-600">{u.fullName}</p><p className="text-xs text-slate-400">{u.email}</p></button></td>
+                      <td className="px-4 py-3"><button onClick={() => setDetailId(u._id)} className="text-left"><p className="font-semibold text-slate-900 hover:text-[#087e83]">{u.fullName}</p><p className="text-xs text-slate-400">{u.email}</p></button></td>
                       <td className="px-4 py-3"><Badge value={u.role} /></td>
                       <td className="px-4 py-3"><Badge value={u.status} /></td>
                       <td className="px-4 py-3">{u.bookingCount}</td>

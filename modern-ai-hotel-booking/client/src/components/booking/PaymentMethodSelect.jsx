@@ -33,7 +33,7 @@ function PaymentMethodSelect({ value, onChange }) {
           return (
             <label
               key={optionValue}
-              className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors focus-within:ring-2 focus-within:ring-blue-500/30 ${
+              className={`sy-co-method ${selected ? "is-selected" : ""} flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors focus-within:ring-2 focus-within:ring-blue-500/30 ${
                 selected
                   ? "border-blue-600 bg-blue-50"
                   : "border-slate-200 bg-white hover:bg-slate-50"
@@ -57,6 +57,7 @@ function PaymentMethodSelect({ value, onChange }) {
                 <span className="block text-sm font-semibold text-slate-900">{title}</span>
                 <span className="mt-0.5 block text-xs text-slate-500">{description}</span>
               </span>
+              <span aria-hidden="true" className="sy-co-radio"/>
             </label>
           );
         })}

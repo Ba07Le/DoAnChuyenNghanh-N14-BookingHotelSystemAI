@@ -66,8 +66,8 @@ export default function AdminHotels() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap rounded-xl bg-white p-1 shadow-sm">
           {TABS.map((t) => (
-            <button key={t} onClick={() => { setSp({ status: t }); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${status === t ? "bg-blue-600 text-white" : "text-slate-600"}`}>
-              {LABELS[t]} <span className={`ml-1 text-xs ${status === t ? "text-blue-100" : "text-slate-400"}`}>{counts[t] ?? 0}</span>
+            <button key={t} onClick={() => { setSp({ status: t }); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${status === t ? "bg-[#087e83] text-white" : "text-slate-600"}`}>
+              {LABELS[t]} <span className={`ml-1 text-xs ${status === t ? "text-[#d0ebe8]" : "text-slate-400"}`}>{counts[t] ?? 0}</span>
             </button>
           ))}
         </div>
@@ -82,7 +82,7 @@ export default function AdminHotels() {
               <li key={h._id} className="flex flex-wrap items-center gap-4 p-4">
                 <img src={h.images?.[0]?.url} alt="" className="h-16 w-24 rounded-lg bg-slate-100 object-cover" />
                 <div className="min-w-0 flex-1">
-                  <button onClick={() => setDetailId(h._id)} className="text-left font-semibold text-slate-900 hover:text-blue-600">{h.name}</button>
+                  <button onClick={() => setDetailId(h._id)} className="text-left font-semibold text-slate-900 hover:text-[#087e83]">{h.name}</button>
                   <p className="text-xs text-slate-400">{h.address?.city} · {h.starRating}★ · Chủ: {h.ownerId?.fullName} · Nộp {fmtDate(h.createdAt)}</p>
                   {h.status === "REJECTED" && h.rejectReason && <p className="mt-1 text-xs text-red-500">Lý do: {h.rejectReason}</p>}
                 </div>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   MapPin,
   Search,
@@ -12,6 +12,7 @@ import {
   Minus,
   Plus,
   X,
+  ArrowRight, LayoutGrid, List, Compass, RotateCcw,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -163,6 +164,18 @@ function Hotels() {
 
   const [openGuests, setOpenGuests] = useState(false);
   const [dateError, setDateError] = useState("");
+
+  const [view, setView] = useState("list");
+  const guestRef = useRef(null);
+  useEffect(() => {
+    if (!openGuests) return;
+    const close = (event) => {
+      if (event.type === "keydown" ? event.key === "Escape" : !guestRef.current?.contains(event.target)) setOpenGuests(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", close); };
+  }, [openGuests]);
 
   const [sort, setSort] = useState("recommended");
 
@@ -517,13 +530,21 @@ function Hotels() {
   // ==========================================
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="sy-hotels-page min-h-screen">
       <Navbar />
 
+      <section className="sy-hotels-hero">
+        <div className="sy-hotels-width sy-hotels-hero-copy">
+          <nav aria-label="Đường dẫn" className="sy-hotels-breadcrumb"><Link to="/">Trang chủ</Link><span>/</span><span>Khách sạn</span></nav>
+          <p className="sy-hotels-kicker">THE SEEYAHH! COLLECTION</p>
+          <h1>Tìm một nơi <em>để nhớ.</em></h1>
+          <p>Khám phá những không gian lưu trú phù hợp với hành trình của bạn.</p>
+        </div>
+      </section>
       {/* THANH TÌM KIẾM */}
-      <section className="sy-hotel-search border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-6">
-          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
+      <section className="sy-hotel-search">
+        <div className="sy-hotels-width sy-hotels-search-wrap">
+          <div className="sy-hotels-search-grid">
             {/* Điểm đến */}
             <div className="flex flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
               <MapPin size={19} className="text-blue-600" />
@@ -535,6 +556,7 @@ function Hotels() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  aria-label="Điểm đến"
                   placeholder="Bạn muốn đi đâu?"
                   className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
                 />
@@ -589,9 +611,10 @@ function Hotels() {
             </div>
 
             {/* Số khách và phòng */}
-            <div className="relative shrink-0">
+            <div ref={guestRef} className="relative shrink-0 sy-hotels-guests">
               <button
                 type="button"
+                aria-expanded={openGuests}
                 onClick={() => setOpenGuests((v) => !v)}
                 className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
               >
@@ -702,33 +725,31 @@ function Hotels() {
       {/* DANH SÁCH KHÁCH SẠN */}
       <main
         id="hotel-results"
-        className="mx-auto max-w-7xl scroll-mt-24 px-6 py-8"
+        className="sy-hotels-width sy-hotels-results scroll-mt-24"
       >
-        {/* Breadcrumb */}
-        <div className="mb-5 text-sm text-slate-400">
-          Trang chủ
-          <span className="mx-2">/</span>
-          <span className="font-medium text-slate-600">Khách sạn</span>
-        </div>
-
         {/* Tiêu đề và sắp xếp */}
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="sy-hotels-results-heading">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              Khám phá khách sạn
-            </h1>
+            <p className="sy-hotels-kicker">EXPLORE YOUR STAY</p>
+            <h2>Không gian dành cho bạn</h2>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500" aria-live="polite">
               {loading
                 ? "Đang tìm kiếm..."
                 : `${visible.length} nơi lưu trú phù hợp`}
             </p>
           </div>
 
+          <div className="sy-hotels-tools">
+            <div className="sy-hotels-view" role="group" aria-label="Kiểu hiển thị">
+              <button type="button" aria-label="Danh sách" aria-pressed={view === "list"} onClick={() => setView("list")}><List size={18}/></button>
+              <button type="button" aria-label="Lưới" aria-pressed={view === "grid"} onClick={() => setView("grid")}><LayoutGrid size={17}/></button>
+            </div>
           <div className="relative flex items-center gap-2">
             <span className="text-sm text-slate-500">Sắp xếp:</span>
 
             <select
+              aria-label="Sắp xếp khách sạn"
               value={sort}
               onChange={(e) => {
                 setSort(e.target.value);
@@ -752,18 +773,22 @@ function Hotels() {
               className="pointer-events-none absolute right-3 text-slate-400"
             />
           </div>
+          </div>
         </div>
 
         {/* Bộ lọc và Filter Chips */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div className="sy-hotels-filterbar">
           <button
             type="button"
             onClick={() => setIsFilterOpen(true)}
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-blue-600"
+            className="sy-hotels-filter-trigger"
+            aria-haspopup="dialog"
+            aria-expanded={isFilterOpen}
           >
             <SlidersHorizontal size={15} />
-            Bộ lọc
+            Bộ lọc {selectedChips.length > 0 && <span>{selectedChips.length}</span>}
           </button>
+          {selectedChips.length === 0 && <span className="sy-hotels-filter-hint">Tinh chỉnh theo ngân sách, hạng sao và tiện nghi</span>}
 
           {selectedChips.map((chip) => (
             <button
@@ -777,6 +802,7 @@ function Hotels() {
               <X size={14} />
             </button>
           ))}
+          {selectedChips.length > 0 && <button type="button" className="sy-hotels-clear" onClick={() => handleApplyFilters(EMPTY_FILTERS)}><RotateCcw size={14}/> Xóa tất cả</button>}
         </div>
 
         {/* Thông báo lỗi */}
@@ -788,16 +814,16 @@ function Hotels() {
 
         {/* Kết quả */}
         {loading ? (
-          <div className="space-y-5">
+          <div className={`sy-hotels-list sy-hotels-${view}`} aria-busy="true">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-72 animate-pulse rounded-2xl bg-white"
-              />
+                className="sy-hotels-skeleton animate-pulse" aria-hidden="true"
+              ><div/><section><span/><span/><span/><span/></section></div>
             ))}
           </div>
         ) : visible.length ? (
-          <div className="space-y-5">
+          <div className={`sy-hotels-list sy-hotels-${view}`}>
             {pageHotels.map((h) => (
               <HotelCard
                 key={h._id}
@@ -885,8 +911,10 @@ function Hotels() {
             )}
           </div>
         ) : (
-          <div className="rounded-2xl bg-white p-12 text-center text-slate-500">
-            Không có khách sạn phù hợp.
+          <div className="sy-hotels-empty">
+            <Compass size={36}/><h3>{error ? "Chưa thể tải kết quả" : "Chưa tìm thấy nơi lưu trú phù hợp"}</h3>
+            <p>{error ? "Hãy thử tải lại danh sách." : "Thử thay đổi điểm đến, ngày lưu trú hoặc bộ lọc để khám phá thêm lựa chọn."}</p>
+            {error ? <button type="button" onClick={() => setRefreshCount(n => n + 1)}>Thử lại</button> : <button type="button" onClick={() => setIsFilterOpen(true)}>Điều chỉnh bộ lọc <ArrowRight size={16}/></button>}
           </div>
         )}
       </main>

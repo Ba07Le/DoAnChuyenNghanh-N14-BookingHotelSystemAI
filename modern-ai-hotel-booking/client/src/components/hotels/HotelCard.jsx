@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useWishlist } from "../../context/WishlistContext";
-import { Bath, Heart, MapPin, Star, Waves, Wifi, Wind } from "lucide-react";
+import { ArrowUpRight, Bath, Heart, MapPin, Star, Waves, Wifi, Wind } from "lucide-react";
 
 function HotelCard({ hotel, searchParams = "" }) {
   const { isLiked, toggleLike } = useWishlist();
@@ -39,12 +39,13 @@ function HotelCard({ hotel, searchParams = "" }) {
 
   return (
     <article className="sy-card sy-hotel-card group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
-      <div className="flex flex-col md:flex-row">
+      <div className="sy-hotel-card-layout">
         {/* IMAGE */}
-        <div className="relative h-64 w-full overflow-hidden md:h-auto md:w-[310px] md:shrink-0">
+        <div className="sy-hotel-card-media relative overflow-hidden">
           <img
             src={hotel.image}
             alt={hotel.name}
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
 
@@ -89,15 +90,11 @@ function HotelCard({ hotel, searchParams = "" }) {
         </div>
 
         {/* CONTENT */}
-        <div className="flex min-w-0 flex-1 flex-col p-5">
+        <div className="sy-hotel-card-content flex min-w-0 flex-1 flex-col">
           <div className="flex flex-1 flex-col">
             {/* Hotel type */}
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
-              {hotel.hotelType === "RESORT"
-                ? "Resort"
-                : hotel.hotelType === "BOUTIQUE"
-                  ? "Boutique Hotel"
-                  : "Khách sạn"}
+              {({ HOTEL: "Khách sạn", RESORT: "Resort", VILLA: "Villa", APARTMENT: "Căn hộ", HOMESTAY: "Homestay", BOUTIQUE: "Boutique Hotel" })[hotel.hotelType] || "Nơi lưu trú"}
             </div>
 
             {/* Name */}
@@ -138,25 +135,9 @@ function HotelCard({ hotel, searchParams = "" }) {
             </div>
 
             {/* Rating */}
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-blue-600 px-2 text-sm font-bold text-white">
-                {hotel.rating}
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  {hotel.rating >= 4.8
-                    ? "Xuất sắc"
-                    : hotel.rating >= 4.5
-                      ? "Rất tốt"
-                      : "Tốt"}
-                </p>
-
-                <p className="text-xs text-slate-400">
-                  {hotel.reviews} đánh giá
-                </p>
-              </div>
-            </div>
+            {Number(hotel.reviews) > 0 ? (
+              <div className="sy-hotel-rating"><strong>{hotel.rating}</strong><div><p>{hotel.rating >= 4.8 ? "Xuất sắc" : hotel.rating >= 4.5 ? "Rất tốt" : hotel.rating >= 4 ? "Tốt" : "Đánh giá khách hàng"}</p><small>{hotel.reviews} đánh giá</small></div></div>
+            ) : <p className="sy-hotel-unrated">Chưa có đánh giá</p>}
 
             {/* Amenities */}
             <div className="mt-5 flex flex-wrap gap-2">
@@ -177,9 +158,9 @@ function HotelCard({ hotel, searchParams = "" }) {
           </div>
 
           {/* Bottom */}
-          <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="sy-hotel-card-bottom">
             {/* Room */}
-            <div>
+            <div className="sy-hotel-room">
               <p className="text-xs text-slate-400">Phòng đề xuất</p>
 
               <p className="mt-1 text-sm font-semibold text-slate-700">
@@ -188,7 +169,7 @@ function HotelCard({ hotel, searchParams = "" }) {
             </div>
 
             {/* Price */}
-            <div className="sm:text-right">
+            <div className="sy-hotel-price">
               <p className="text-xs text-slate-400">Từ</p>
 
               <div className="mt-1">
@@ -228,7 +209,7 @@ function HotelCard({ hotel, searchParams = "" }) {
     active:scale-[0.98]
   "
             >
-              Xem chi tiết
+              Xem chi tiết <ArrowUpRight size={16}/>
             </Link>
           </div>
         </div>

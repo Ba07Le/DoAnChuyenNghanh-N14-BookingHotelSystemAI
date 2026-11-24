@@ -1,4 +1,17 @@
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  UserRound,
+  Mail,
+  Phone,
+  CalendarDays,
+  Globe2,
+  MapPin,
+  ShieldCheck,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getMe } from "../api/authApi";
 import { updateProfile } from "../api/profileApi";
@@ -213,8 +226,7 @@ const COUNTRY_CODES = [
   "ZW",
 ];
 
-const inputClass =
-  "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
+const inputClass = "sy-profile-input";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -230,9 +242,21 @@ const toForm = (profile) => ({
 });
 
 function Field({ label, className = "", children }) {
+  const Icon = {
+    "Họ và tên": UserRound,
+    Email: Mail,
+    "Số điện thoại": Phone,
+    "Ngày sinh": CalendarDays,
+    "Giới tính": UserRound,
+    "Quốc tịch": Globe2,
+    "Địa chỉ": MapPin,
+  }[label];
   return (
-    <label className={`block text-sm font-medium text-slate-700 ${className}`}>
-      {label}
+    <label className={`sy-profile-field ${className}`}>
+      <span className="sy-profile-label">
+        {Icon && <Icon size={16} aria-hidden="true" />}
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -378,50 +402,81 @@ function Profile() {
     .charAt(0)
     .toUpperCase();
 
+  const filled = Object.values(form).filter((value) =>
+    String(value ?? "").trim(),
+  ).length;
+  const progress = Math.round((filled / Object.keys(form).length) * 100);
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-      {loading && (
-        <p className="mb-4 text-sm text-slate-500">Đang tải hồ sơ...</p>
-      )}
-      <h1 className="text-3xl font-bold text-slate-900">Hồ sơ cá nhân</h1>
-      <p className="mt-2 text-sm text-slate-500">
-        Cập nhật thông tin tài khoản của bạn.
-      </p>
+    <div className="sy-profile">
+      <header className="sy-profile-heading">
+        <p className="sy-profile-kicker">YOUR PERSONAL SPACE</p>
+        <h1>Hồ sơ cá nhân</h1>
+        <p>Quản lý thông tin của bạn để mỗi hành trình thêm thuận tiện.</p>
+      </header>
+      <div className="sy-profile-identity">
+        <div className="sy-profile-person">
+          {profile.avatar ? (
+            <img
+              src={profile.avatar}
+              alt={profile.fullName}
+              className="sy-profile-avatar"
+            />
+          ) : (
+            <div className="sy-profile-avatar sy-profile-initial">
+              {initial}
+            </div>
+          )}
 
-      <div className="mt-8 flex items-center gap-4">
-        {profile.avatar ? (
-          <img
-            src={profile.avatar}
-            alt={profile.fullName}
-            className="h-20 w-20 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 text-3xl font-bold text-blue-600">
-            {initial}
+          <div className="min-w-0">
+            <p className="sy-profile-name">{profile.fullName}</p>
+            <p className="sy-profile-email">{profile.email}</p>
           </div>
-        )}
-
-        <div className="min-w-0">
-          <p className="truncate text-lg font-semibold text-slate-900">
-            {profile.fullName}
-          </p>
-          <p className="truncate text-sm text-slate-500">{profile.email}</p>
+        </div>
+        <div className="sy-profile-progress">
+          <div>
+            <span>Hoàn thiện hồ sơ</span>
+            <strong>{progress}%</strong>
+          </div>
+          <div
+            className="sy-profile-meter"
+            role="progressbar"
+            aria-label="Hoàn thiện hồ sơ"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <small>
+            {filled}/{Object.keys(form).length} trường thông tin đã nhập
+          </small>
         </div>
       </div>
-
+      {loading && (
+        <p className="sy-profile-status" role="status">
+          <Loader2 size={17} className="animate-spin" /> Đang tải hồ sơ...
+        </p>
+      )}
       {error && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
+        <div className="sy-profile-notice sy-profile-error" role="alert">
+          <AlertCircle size={18} /> {error}
         </div>
       )}
 
       {success && (
-        <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
-          {success}
+        <div className="sy-profile-notice sy-profile-success" role="status">
+          <CheckCircle2 size={18} /> {success}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-8 grid gap-5 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="sy-profile-form">
+        <div className="sy-profile-section">
+          <UserRound size={21} />
+          <div>
+            <h2>Thông tin cá nhân</h2>
+            <p>Thông tin cơ bản và liên hệ của bạn.</p>
+          </div>
+        </div>
         <Field label="Họ và tên">
           <input
             name="fullName"
@@ -438,12 +493,12 @@ function Profile() {
             <input
               value={profile.email || ""}
               disabled
-              className={`${inputClass} bg-slate-50 pr-28 text-slate-500`}
+              className={`${inputClass} sy-profile-email-input`}
             />
 
             {profile.emailVerified && (
-              <span className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
-                Đã xác minh
+              <span className="sy-profile-verified">
+                <ShieldCheck size={14} /> Đã xác minh
               </span>
             )}
           </div>
@@ -455,7 +510,7 @@ function Profile() {
             type="tel"
             value={form.phone}
             onChange={handleChange}
-            placeholder=""
+            placeholder="Nhập số điện thoại"
             className={inputClass}
           />
         </Field>
@@ -471,6 +526,13 @@ function Profile() {
           />
         </Field>
 
+        <div className="sy-profile-section sy-profile-secondary">
+          <Globe2 size={21} />
+          <div>
+            <h2>Thông tin bổ sung</h2>
+            <p>Hoàn thiện thông tin cho những chuyến đi tiếp theo.</p>
+          </div>
+        </div>
         <Field label="Giới tính">
           <select
             name="gender"
@@ -565,12 +627,21 @@ function Profile() {
           />
         </Field>
 
-        <div className="sm:col-span-2">
+        <div className="sy-profile-actions">
+          <p>
+            <ShieldCheck size={18} /> Email đăng nhập không thể chỉnh sửa tại
+            đây.
+          </p>
           <button
             type="submit"
             disabled={loading || saving}
-            className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="sy-profile-save"
           >
+            {saving ? (
+              <Loader2 size={17} className="animate-spin" />
+            ) : (
+              <Save size={17} />
+            )}
             {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>

@@ -1,484 +1,448 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-
 import {
-  MapPin,
-  Star,
-  Building2,
-  Palmtree,
-  House,
-  Building,
-  BedDouble,
-  Castle,
-  Percent,
-  Sparkles,
-  BadgeCheck,
-  ShieldCheck,
-  Headphones,
   ArrowRight,
+  ArrowLeft,
+  ArrowUpRight,
+  Heart,
+  Sparkles,
+  ShieldCheck,
+  BadgeCheck,
+  Headphones,
+  TicketPercent,
+  Copy,
+  Check,
+  Star,
+  MapPin,
 } from "lucide-react";
+import { useWishlist } from "../context/WishlistContext";
+import { getImageUrl } from "../utils/imageUrl";
 
-/* =========================================================
-   1. POPULAR DESTINATIONS
-========================================================= */
-
-export function PopularDestinations({
-  destinations = [],
-  isLoading = false,
-}) {
+const photo = (id) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=82`;
+const fallback = photo("photo-1566073771259-6a8506099945");
+const typePhotos = {
+  HOTEL: "photo-1566073771259-6a8506099945",
+  RESORT: "photo-1571896349842-33c89424de2d",
+  VILLA: "photo-1613490493576-7fde63acd811",
+  APARTMENT: "photo-1600210492486-724fe5c67fb0",
+  HOMESTAY: "photo-1510798831971-661eb04b3739",
+  BOUTIQUE: "photo-1564501049412-61c2a3083791",
+};
+const typeNames = {
+  HOTEL: "Khách sạn",
+  RESORT: "Resort",
+  VILLA: "Villa",
+  APARTMENT: "Căn hộ",
+  HOMESTAY: "Homestay",
+  BOUTIQUE: "Boutique",
+};
+const money = (value) => Number(value || 0).toLocaleString("vi-VN") + "₫";
+const date = (value) =>
+  value ? new Date(value).toLocaleDateString("vi-VN") : "";
+function Picture({ src, alt, ...props }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16">
-      <div className="mb-8 flex items-end justify-between">
-        <div>
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-            Khám phá Việt Nam
-          </p>
-
-          <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-            Điểm đến phổ biến
-          </h2>
-
-          <p className="mt-2 text-slate-500">
-            Những điểm đến được nhiều du khách lựa chọn
-          </p>
-        </div>
-
-        <Link
-          to="/destinations"
-          className="hidden items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700 md:flex"
-        >
-          Xem tất cả
-          <ArrowRight size={17} />
+    <img
+      {...props}
+      src={getImageUrl(src) || fallback}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onError={(e) => {
+        if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+      }}
+    />
+  );
+}
+function Section({ children, className = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (
+      !window.IntersectionObserver ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("sy-home-visible");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.08 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <section ref={ref} className={`sy-home-section ${className}`}>
+      <div className="sy-home-container">{children}</div>
+    </section>
+  );
+}
+function Heading({ eyebrow, title, description, to }) {
+  return (
+    <div className="sy-home-heading">
+      <div>
+        <p className="sy-home-kicker">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p className="sy-home-description">{description}</p>
+      </div>
+      {to && (
+        <Link className="sy-home-more" to={to}>
+          Xem tất cả <ArrowUpRight size={17} />
         </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => (
-            <div
-              key={item}
-              className="h-48 animate-pulse rounded-2xl bg-slate-100"
-            />
-          ))}
-        </div>
-      ) : destinations.length > 0 ? (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-          {destinations.map((destination) => (
-            <Link
-              key={destination.city}
-              to={"/hotels?city=" + encodeURIComponent(destination.city)}
-              className="sy-card group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={
-                    destination.image ||
-                    "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80"
-                  }
-                  alt={destination.city}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-
-                <div className="absolute bottom-4 left-4 text-white">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin size={16} />
-                    <h3 className="font-semibold">
-                      {destination.city}
-                    </h3>
-                  </div>
-
-                  <p className="mt-1 text-sm text-white/80">
-                    {destination.hotelCount || 0} khách sạn
-                  </p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <EmptyState text="Chưa có dữ liệu điểm đến." />
       )}
-    </section>
-  );
-}
-
-/* =========================================================
-   2. FEATURED HOTELS
-========================================================= */
-
-export function FeaturedHotels({
-  hotels = [],
-  isLoading = false,
-}) {
-  return (
-    <section className="bg-slate-50">
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-              Lựa chọn nổi bật
-            </p>
-
-            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Khách sạn nổi bật
-            </h2>
-
-            <p className="mt-2 text-slate-500">
-              Những nơi lưu trú được đánh giá cao
-            </p>
-          </div>
-
-          <Link
-            to="/hotels"
-            className="hidden items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700 md:flex"
-          >
-            Xem tất cả
-            <ArrowRight size={17} />
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-96 animate-pulse rounded-2xl bg-white"
-              />
-            ))}
-          </div>
-        ) : hotels.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {hotels.map((hotel) => {
-              const primaryImage =
-                hotel.images?.find((image) => image.isPrimary)?.url ||
-                hotel.images?.[0]?.url ||
-                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80";
-
-              return (
-                <Link
-  key={hotel._id}
-  to={"/hotels/" + hotel.slug}
-  className="sy-card group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
->
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img
-                      src={primaryImage}
-                      alt={hotel.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-
-                    <div className="absolute left-4 top-4 rounded-lg bg-white/95 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow">
-                      {hotel.starRating || 0} ★
-                    </div>
-                  </div>
-
-                  <div className="p-5">
-                    <p className="mb-1 text-sm text-blue-600">
-                      {hotel.address?.city || "Việt Nam"}
-                    </p>
-
-                    <h3 className="line-clamp-1 text-lg font-bold text-slate-900">
-                      {hotel.name}
-                    </h3>
-
-                    <div className="mt-3 flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Star
-                          size={16}
-                          className="fill-yellow-400 text-yellow-400"
-                        />
-
-                        <span className="font-semibold text-slate-900">
-                          {hotel.averageRating || 0}
-                        </span>
-                      </div>
-
-                      <span className="text-sm text-slate-400">
-                        ({hotel.reviewCount || 0} đánh giá)
-                      </span>
-                    </div>
-
-                    <div className="mt-5 flex items-end justify-between">
-                      <div>
-                        <p className="text-xs text-slate-400">
-                          Giá từ
-                        </p>
-
-                        <p className="text-xl font-bold text-blue-600">
-                          {Number(
-                            hotel.priceFrom || 0
-                          ).toLocaleString("vi-VN")}
-                          ₫
-                        </p>
-                      </div>
-
-                      <span className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition group-hover:bg-blue-600">
-                        Xem phòng
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <EmptyState text="Chưa có khách sạn nổi bật." />
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   3. HOTEL TYPES
-========================================================= */
-
-export function HotelTypes({
-  types = [],
-  isLoading = false,
-}) {
-  return (
-    <section className="mx-auto max-w-7xl px-6 py-16">
-      <div className="mb-8">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-          Chọn phong cách
-        </p>
-
-        <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-          Khám phá theo loại hình
-        </h2>
-
-        <p className="mt-2 text-slate-500">
-          Tìm nơi lưu trú phù hợp với phong cách chuyến đi của bạn
-        </p>
-      </div>
-
-      {isLoading ? (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div
-              key={item}
-              className="h-32 animate-pulse rounded-2xl bg-slate-100"
-            />
-          ))}
-        </div>
-      ) : types.length > 0 ? (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-6">
-          {types.map((type) => (
-            <Link
-              key={type.type}
-              to={"/hotels?type=" + encodeURIComponent(type.type)}
-              className="sy-card sy-type-card group block cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
-            >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-                {(() => { const Icon = ({ HOTEL: Building2, RESORT: Palmtree, VILLA: Castle, APARTMENT: Building, HOMESTAY: House, BOUTIQUE: BedDouble })[type.type] || Building2; return <Icon size={23} />; })()}
-              </div>
-
-              <h3 className="mt-4 font-semibold text-slate-900">
-                {formatHotelType(type.type)}
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-400">
-                {type.hotelCount || 0} nơi lưu trú
-              </p>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <EmptyState text="Chưa có dữ liệu loại hình khách sạn." />
-      )}
-    </section>
-  );
-}
-
-/* =========================================================
-   4. FEATURED DEALS
-========================================================= */
-
-export function FeaturedDeals({
-  deals = [],
-  isLoading = false,
-}) {
-  return (
-    <section className="bg-slate-50">
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-8">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-            Ưu đãi dành cho bạn
-          </p>
-
-          <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-            Ưu đãi nổi bật
-          </h2>
-
-          <p className="mt-2 text-slate-500">
-            Tiết kiệm hơn cho chuyến đi tiếp theo
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-48 animate-pulse rounded-2xl bg-white"
-              />
-            ))}
-          </div>
-        ) : deals.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {deals.map((deal) => (
-              <div
-                key={deal._id}
-                  className="sy-card group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                      <Percent size={23} />
-                    </div>
-
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
-  {deal.discountType === "PERCENTAGE"
-    ? "-" + deal.discountValue + "%"
-    : "-" +
-      Number(deal.discountValue || 0).toLocaleString("vi-VN") +
-      "₫"}
-</span>
-                  </div>
-
-                <h3 className="mt-5 text-lg font-bold text-slate-900">
-                  {deal.code}
-                </h3>
-
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
-                  {deal.description ||
-                    "Ưu đãi đặc biệt dành cho khách hàng."}
-                </p>
-
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <p className="text-xs text-slate-400">
-                    Áp dụng từ {formatDate(deal.startDate)} đến{" "}
-                    {formatDate(deal.endDate)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyState text="Chưa có ưu đãi nổi bật." />
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   5. WHY CHOOSE US
-========================================================= */
-
-export function WhyChooseUs() {
-  const reasons = [
-    {
-      icon: Sparkles,
-      title: "Tìm kiếm thông minh",
-      description:
-        "Dễ dàng tìm kiếm nơi lưu trú phù hợp với nhu cầu và ngân sách.",
-    },
-    {
-      icon: BadgeCheck,
-      title: "Thông tin rõ ràng",
-      description:
-        "Thông tin khách sạn, phòng và tiện nghi được hiển thị minh bạch.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "Đặt phòng an tâm",
-      description:
-        "Quy trình đặt phòng rõ ràng và an toàn cho mọi khách hàng.",
-    },
-    {
-      icon: Headphones,
-      title: "Luôn sẵn sàng hỗ trợ",
-      description:
-        "Hỗ trợ khách hàng trong suốt hành trình đặt và sử dụng dịch vụ.",
-    },
-  ];
-
-  return (
-    <section className="mx-auto max-w-7xl px-6 py-16">
-      <div className="mb-10 text-center">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
-          SeeYAHH! - Nền tảng đặt phòng hiện đại
-        </p>
-
-        <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-          Tại sao nên lựa chọn SeeYAHH!
-        </h2>
-
-        <p className="mx-auto mt-2 max-w-2xl text-slate-500">
-          Một nền tảng đặt phòng hiện đại giúp chuyến đi của bạn trở nên đơn
-          giản và thuận tiện hơn.
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {reasons.map((reason) => {
-          const Icon = reason.icon;
-
-          return (
-            <div
-              key={reason.title}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                <Icon size={26} />
-              </div>
-
-              <h3 className="mt-5 font-bold text-slate-900">
-                {reason.title}
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {reason.description}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function EmptyState({ text }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
-      <Building2 className="mx-auto text-slate-300" size={36} />
-
-      <p className="mt-3 text-sm text-slate-400">{text}</p>
     </div>
   );
 }
-
-function formatHotelType(type) {
-  const types = {
-    HOTEL: "Khách sạn",
-    RESORT: "Resort",
-    VILLA: "Villa",
-    APARTMENT: "Căn hộ",
-    HOMESTAY: "Homestay",
-    BOUTIQUE: "Boutique",
-  };
-
-  return types[type] || type;
+function State({ loading, text }) {
+  return loading ? (
+    <div className="sy-home-skeletons" aria-label="Đang tải dữ liệu">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="animate-pulse" />
+      ))}
+    </div>
+  ) : (
+    <p className="sy-home-empty">{text}</p>
+  );
 }
-
-function formatDate(date) {
-  if (!date) return "";
-
-  return new Date(date).toLocaleDateString("vi-VN");
+export function TrustStrip() {
+  return (
+    <div className="sy-home-trust sy-home-container">
+      {[
+        [Sparkles, "Tìm kiếm thông minh"],
+        [ShieldCheck, "Đặt phòng an tâm"],
+        [BadgeCheck, "Thông tin minh bạch"],
+        [Headphones, "Hỗ trợ tận tâm"],
+      ].map(([Icon, label]) => (
+        <div key={label}>
+          <Icon size={21} />
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+export function PopularDestinations({ destinations = [], isLoading = false }) {
+  return (
+    <Section>
+      <Heading
+        eyebrow="01 — DISCOVER VIETNAM"
+        title="Bạn muốn đi đâu?"
+        description="Mỗi vùng đất, một trải nghiệm riêng."
+        to="/destinations"
+      />
+      {isLoading || !destinations.length ? (
+        <State loading={isLoading} text="Chưa có dữ liệu điểm đến." />
+      ) : (
+        <div className="sy-home-bento">
+          {destinations.map((d, i) => (
+            <Link
+              key={d.city}
+              to={"/hotels?city=" + encodeURIComponent(d.city)}
+              className={`sy-home-destination ${i % 8 === 0 || i % 8 === 7 ? "sy-home-destination-wide" : ""}`}
+            >
+              <Picture
+                src={d.image || photo("photo-1528127269322-539801943592")}
+                alt={d.city}
+              />
+              <div className="sy-home-image-shade" />
+              <div className="sy-home-destination-copy">
+                <div>
+                  <h3>{d.city}</h3>
+                  <p>{d.hotelCount || 0} khách sạn</p>
+                </div>
+                <span>
+                  <ArrowUpRight size={21} />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+function Rail({ children, label }) {
+  const ref = useRef(null);
+  const move = (dir) => {
+    const el = ref.current;
+    if (el)
+      el.scrollBy({
+        left: dir * el.clientWidth * 0.85,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+  };
+  return (
+    <div className="sy-home-rail-wrap">
+      <div className="sy-home-rail-actions">
+        <button
+          type="button"
+          aria-label={`Trước: ${label}`}
+          onClick={() => move(-1)}
+        >
+          <ArrowLeft size={19} />
+        </button>
+        <button
+          type="button"
+          aria-label={`Tiếp: ${label}`}
+          onClick={() => move(1)}
+        >
+          <ArrowRight size={19} />
+        </button>
+      </div>
+      <div className="sy-home-rail" ref={ref} tabIndex={0} aria-label={label}>
+        {children}
+      </div>
+    </div>
+  );
+}
+export function HotelTypes({ types = [], isLoading = false }) {
+  return (
+    <Section className="sy-home-types">
+      <Heading
+        eyebrow="02 — STAY IN STYLE"
+        title="Nghỉ dưỡng theo cách của bạn."
+        description="Tìm không gian phù hợp với từng hành trình."
+      />
+      {isLoading || !types.length ? (
+        <State
+          loading={isLoading}
+          text="Chưa có dữ liệu loại hình khách sạn."
+        />
+      ) : (
+        <div className="sy-home-type-grid">
+          {types.map((t) => (
+            <Link
+              key={t.type}
+              to={"/hotels?type=" + encodeURIComponent(t.type)}
+              className="sy-home-type"
+            >
+              <Picture
+                src={photo(typePhotos[t.type] || typePhotos.HOTEL)}
+                alt={typeNames[t.type] || t.type}
+              />
+              <div>
+                <h3>{typeNames[t.type] || t.type}</h3>
+                <p>{t.hotelCount || 0} nơi lưu trú</p>
+              </div>
+              <ArrowUpRight size={16} />
+            </Link>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+function Hotel({ hotel }) {
+  const { isLiked, toggleLike } = useWishlist();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const liked = isLiked(hotel._id);
+  const image =
+    hotel.images?.find((i) => i.isPrimary)?.url || hotel.images?.[0]?.url;
+  const toggle = async () => {
+    setBusy(true);
+    setError(false);
+    try {
+      const ok = await toggleLike(hotel._id);
+      if (!ok) setError(true);
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <article className="sy-home-hotel">
+      <div className="sy-home-hotel-image">
+        <Link to={"/hotels/" + hotel.slug}>
+          <Picture src={image} alt={hotel.name} />
+        </Link>
+        <span className="sy-home-stars">
+          <Star size={13} fill="currentColor" />
+          {hotel.starRating || 0} sao
+        </span>
+        <button
+          type="button"
+          className="sy-home-heart"
+          aria-label={liked ? "Bỏ yêu thích" : "Thêm yêu thích"}
+          aria-pressed={liked}
+          disabled={busy}
+          onClick={toggle}
+        >
+          <Heart size={20} fill={liked ? "currentColor" : "none"} />
+        </button>
+      </div>
+      <div className="sy-home-hotel-body">
+        <p className="sy-home-location">
+          <MapPin size={14} />
+          {hotel.address?.city || "Việt Nam"}
+        </p>
+        <Link to={"/hotels/" + hotel.slug}>
+          <h3>{hotel.name}</h3>
+        </Link>
+        <p className="sy-home-rating">
+          {hotel.reviewCount > 0 ? (
+            <>
+              <Star size={14} fill="currentColor" /> {hotel.averageRating || 0}{" "}
+              · {hotel.reviewCount} đánh giá
+            </>
+          ) : (
+            "Chưa có đánh giá"
+          )}
+        </p>
+        {error && (
+          <p role="status" className="text-xs text-red-600">
+            Không thể cập nhật yêu thích. Vui lòng thử lại.
+          </p>
+        )}
+        <div className="sy-home-hotel-bottom">
+          <div>
+            <small>Giá từ</small>
+            <strong>{money(hotel.priceFrom)}</strong>
+          </div>
+          <Link to={"/hotels/" + hotel.slug} className="sy-home-room-link">
+            Xem phòng <ArrowUpRight size={15} />
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+export function FeaturedHotels({ hotels = [], isLoading = false }) {
+  return (
+    <Section className="sy-home-collection">
+      <Heading
+        eyebrow="03 — THE SEEYAHH! COLLECTION"
+        title="Những nơi lưu trú đáng nhớ."
+        description="Khám phá các lựa chọn nổi bật dành cho chuyến đi của bạn."
+        to="/hotels"
+      />
+      {isLoading || !hotels.length ? (
+        <State loading={isLoading} text="Chưa có khách sạn nổi bật." />
+      ) : (
+        <Rail label="Khách sạn nổi bật">
+          {hotels.map((h) => (
+            <Hotel key={h._id} hotel={h} />
+          ))}
+        </Rail>
+      )}
+    </Section>
+  );
+}
+function Voucher({ deal }) {
+  const [status, setStatus] = useState("");
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(deal.code);
+      setStatus("Đã sao chép");
+    } catch {
+      setStatus("Hãy sao chép mã thủ công");
+    }
+  };
+  return (
+    <article className="sy-home-voucher">
+      <div className="sy-home-voucher-top">
+        <TicketPercent size={25} />
+        <span>SEEYAHH! EXCLUSIVE</span>
+      </div>
+      <small>Tiết kiệm</small>
+      <strong>
+        {deal.discountType === "PERCENTAGE"
+          ? `${deal.discountValue}%`
+          : money(deal.discountValue)}
+      </strong>
+      <p>{deal.description || "Ưu đãi đặc biệt dành cho khách hàng."}</p>
+      <div className="sy-home-voucher-code">
+        <span>{deal.code}</span>
+        <button
+          type="button"
+          aria-label={`Sao chép ${deal.code}`}
+          onClick={copy}
+        >
+          {status === "Đã sao chép" ? <Check size={17} /> : <Copy size={17} />}
+        </button>
+      </div>
+      <small>
+        Áp dụng từ {date(deal.startDate)} đến {date(deal.endDate)}
+      </small>
+      {status && <small role="status">{status}</small>}
+    </article>
+  );
+}
+export function FeaturedDeals({ deals = [], isLoading = false }) {
+  return (
+    <Section>
+      <Heading
+        eyebrow="04 — EXCLUSIVE OFFERS"
+        title="Trải nghiệm nhiều hơn. Tiết kiệm hơn."
+        description="Những ưu đãi dành cho hành trình tiếp theo."
+        to="/offers"
+      />
+      {isLoading || !deals.length ? (
+        <State loading={isLoading} text="Chưa có ưu đãi nổi bật." />
+      ) : (
+        <div className="sy-home-vouchers">
+          {deals.map((d) => (
+            <Voucher key={d._id} deal={d} />
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+export function WhyChooseUs() {
+  const reasons = [
+    [
+      Sparkles,
+      "Tìm kiếm thông minh",
+      "Khám phá lựa chọn phù hợp với nhu cầu và ngân sách.",
+    ],
+    [
+      BadgeCheck,
+      "Thông tin rõ ràng",
+      "Thông tin khách sạn, phòng và tiện nghi minh bạch.",
+    ],
+    [
+      ShieldCheck,
+      "Đặt phòng an tâm",
+      "Quy trình đặt phòng rõ ràng và thuận tiện.",
+    ],
+    [Headphones, "Luôn bên bạn", "Hỗ trợ trong suốt hành trình đặt phòng."],
+  ];
+  return (
+    <Section className="sy-home-why">
+      <div className="sy-home-why-grid">
+        <Picture
+          src={photo("photo-1571896349842-33c89424de2d")}
+          alt="Không gian nghỉ dưỡng bên hồ bơi"
+        />
+        <div>
+          <Heading
+            eyebrow="05 — THE SEEYAHH! DIFFERENCE"
+            title="Không chỉ là một nơi để ở."
+            description="Một hành trình đáng nhớ bắt đầu từ nơi bạn chọn dừng chân."
+          />
+          <div className="sy-home-reasons">
+            {reasons.map(([Icon, title, description]) => (
+              <div key={title}>
+                <Icon size={25} />
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </div>
+            ))}
+          </div>
+          <Link to="/hotels" className="sy-home-room-link">
+            Khám phá khách sạn <ArrowUpRight size={17} />
+          </Link>
+        </div>
+      </div>
+    </Section>
+  );
 }

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 
 // ---------- class dùng chung cho input / select ----------
-export const inputCls = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+export const inputCls = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-[#118e91] focus:ring-2 focus:ring-[#d0ebe8]";
 export const selectCls = `${inputCls} pr-8`;
 
 // ---------- nhãn tiếng Việt + màu ----------
@@ -26,8 +26,8 @@ export const LABELS = {
 };
 
 const BADGE_COLORS = {
-  ACTIVE: "bg-emerald-50 text-emerald-700", APPROVED: "bg-emerald-50 text-emerald-700", PAID: "bg-emerald-50 text-emerald-700", COMPLETED: "bg-emerald-50 text-emerald-700", CONFIRMED: "bg-blue-50 text-blue-700",
-  CHECKED_IN: "bg-indigo-50 text-indigo-700", SCHEDULED: "bg-sky-50 text-sky-700", ADMIN: "bg-violet-50 text-violet-700", HOTEL_OWNER: "bg-sky-50 text-sky-700", CUSTOMER: "bg-slate-100 text-slate-700",
+  ACTIVE: "bg-emerald-50 text-emerald-700", APPROVED: "bg-emerald-50 text-emerald-700", PAID: "bg-emerald-50 text-emerald-700", COMPLETED: "bg-emerald-50 text-emerald-700", CONFIRMED: "bg-[#e8f5f3] text-[#06646a]",
+  CHECKED_IN: "bg-[#e4eff0] text-[#10535a]", SCHEDULED: "bg-[#edf6f4] text-[#286d70]", ADMIN: "bg-violet-50 text-violet-700", HOTEL_OWNER: "bg-[#edf6f4] text-[#286d70]", CUSTOMER: "bg-slate-100 text-slate-700",
   PENDING: "bg-amber-50 text-amber-700", PENDING_APPROVAL: "bg-amber-50 text-amber-700", UNPAID: "bg-amber-50 text-amber-700",
   REJECTED: "bg-red-50 text-red-700", BLOCKED: "bg-red-50 text-red-700", CANCELLED: "bg-red-50 text-red-700",
   SUSPENDED: "bg-orange-50 text-orange-700", REFUNDED: "bg-orange-50 text-orange-700",
@@ -36,7 +36,7 @@ const BADGE_COLORS = {
 
 // màu cho biểu đồ tròn "đặt phòng theo trạng thái"
 export const STATUS_COLORS = {
-  PENDING: "#f59e0b", CONFIRMED: "#2563eb", CHECKED_IN: "#6366f1", COMPLETED: "#10b981", CANCELLED: "#ef4444",
+  PENDING: "#f59e0b", CONFIRMED: "#087e83", CHECKED_IN: "#164b54", COMPLETED: "#10b981", CANCELLED: "#ef4444",
 };
 
 // ---------- helper ----------
@@ -75,7 +75,7 @@ export function Field({ label, children }) {
 
 // change: % thay đổi so với kỳ trước (null = kỳ trước bằng 0). unit="pt" cho tỷ lệ huỷ (chênh lệch điểm %).
 // badWhenUp: tăng là xấu (vd tỷ lệ huỷ) nên đảo màu.
-export function StatCard({ loading, icon: Icon, label, value, change, unit = "%", badWhenUp = false, accent = "text-blue-600" }) {
+export function StatCard({ loading, icon: Icon, label, value, change, unit = "%", badWhenUp = false, accent = "text-[#087e83]" }) {
   const hasChange = change !== undefined;
   const up = (change ?? 0) > 0;
   const good = change === 0 || change === null ? null : badWhenUp ? !up : up;
@@ -183,7 +183,7 @@ export function ConfirmModal({ title, description, confirmLabel = "Xác nhận",
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
       <div className="mt-5 flex justify-end gap-2">
         <button type="button" onClick={onClose} disabled={busy} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50">Huỷ</button>
-        <button type="button" onClick={run} disabled={busy || tooShort} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${danger ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"}`}>
+        <button type="button" onClick={run} disabled={busy || tooShort} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${danger ? "bg-red-600 hover:bg-red-700" : "bg-[#087e83] hover:bg-[#06646a]"}`}>
           {busy && <Loader2 size={14} className="animate-spin" />}{confirmLabel}
         </button>
       </div>

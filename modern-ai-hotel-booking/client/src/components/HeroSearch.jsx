@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -10,7 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 
-function HeroSearch() {
+function HeroSearch({ destinations = [] }) {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -24,6 +24,14 @@ function HeroSearch() {
 
   const [openGuests, setOpenGuests] = useState(false);
   const [loading, setLoading] = useState(false);
+  const guestRef = useRef(null);
+  useEffect(() => {
+    const close = (e) => { if (!guestRef.current?.contains(e.target)) setOpenGuests(false); };
+    const escape = (e) => { if (e.key === "Escape") setOpenGuests(false); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
+  }, []);
 
   const updateGuests = (field, value) => {
     setForm((prev) => ({
@@ -65,7 +73,7 @@ function HeroSearch() {
     <section className="sy-hero relative">
       {/* Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="sy-home-hero-image absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
             "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85')",
@@ -78,16 +86,15 @@ function HeroSearch() {
       {/* Content */}
       <div className="sy-hero-inner relative mx-auto max-w-7xl px-6">
         <div className="sy-hero-copy max-w-2xl">
-          <p className="sy-eyebrow">KHÁM PHÁ VIỆT NAM · THE WAY YOU STAY</p>
+          <p className="sy-eyebrow">KHÁM PHÁ VIỆT NAM · YOUR JOURNEY. YOUR STORY.</p>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-5xl">
-            Mỗi hành trình,
+            Đi xa hơn,
             <br />
-            <span>một nơi để nhớ.</span>
+            <span>chạm đến điều tuyệt vời.</span>
           </h1>
 
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 md:text-lg">
-            Khám phá khách sạn, resort và những trải nghiệm tuyệt vời trên khắp
-            Việt Nam.
+            Khám phá những nơi lưu trú đáng nhớ và tận hưởng hành trình theo cách của riêng bạn.
           </p>
         </div>
 
@@ -96,7 +103,7 @@ function HeroSearch() {
           onSubmit={handleSearch}
           className="sy-search mt-8 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
         >
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr_auto]">
+          <div className="sy-home-search-grid">
             {/* Destination */}
             <div className="group flex min-h-[62px] items-center gap-3 rounded-xl border border-slate-200 px-4 transition-all duration-200 hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
               <MapPin
@@ -111,6 +118,8 @@ function HeroSearch() {
 
                 <input
                   type="text"
+                  aria-label="Điểm đến"
+                  list="sy-home-destinations"
                   value={form.destination}
                   onChange={(e) =>
                     setForm({
@@ -121,6 +130,9 @@ function HeroSearch() {
                   placeholder="Bạn muốn đi đâu?"
                   className="mt-1 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
                 />
+                <datalist id="sy-home-destinations">
+                  {destinations.map((destination) => <option key={destination.city} value={destination.city} />)}
+                </datalist>
               </div>
             </div>
 
@@ -135,6 +147,7 @@ function HeroSearch() {
 
                 <input
                   type="date"
+                  aria-label="Ngày nhận phòng"
                   value={form.checkIn}
                   onChange={(e) =>
                     setForm({
@@ -158,6 +171,7 @@ function HeroSearch() {
 
                 <input
                   type="date"
+                  aria-label="Ngày trả phòng"
                   value={form.checkOut}
                   min={form.checkIn || undefined}
                   onChange={(e) =>
@@ -172,9 +186,10 @@ function HeroSearch() {
             </div>
 
             {/* Guests */}
-            <div className="relative">
+            <div className="relative" ref={guestRef}>
               <button
                 type="button"
+                aria-expanded={openGuests}
                 onClick={() => setOpenGuests(!openGuests)}
                 className="flex min-h-[62px] w-full items-center gap-3 rounded-xl border border-slate-200 px-4 text-left transition-all duration-200 hover:border-blue-300"
               >
@@ -200,7 +215,7 @@ function HeroSearch() {
 
               {/* Guests dropdown */}
               {openGuests && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-[min(320px,calc(100vw-48px))] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+                <div className="sy-home-guest-menu absolute right-0 top-full z-50 mt-2 w-[min(320px,calc(100vw-48px))] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
                   {/* Header */}
                   <div className="mb-2 border-b border-slate-100 pb-3">
                     <p className="text-sm font-bold text-slate-900">

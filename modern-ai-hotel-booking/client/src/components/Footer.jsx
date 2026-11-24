@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Footer() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const isHome = useLocation().pathname === "/";
   const [email, setEmail] = useState("");
 
   const handleLogin = (event) => {
@@ -19,15 +20,15 @@ function Footer() {
       {/* Quick login for visitors only; no newsletter subscription API. */}
       {!isAuthenticated && <div className="border-b border-slate-800">
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-600 px-6 py-8 md:flex-row md:items-center md:px-10">
+          <div className="sy-footer-cta flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-600 px-6 py-8 md:flex-row md:items-center md:px-10">
             {/* Content */}
             <div className="max-w-xl">
               <h2 className="text-2xl font-bold text-white md:text-3xl">
-                Đăng nhập để khám phá ưu đãi
+                {isHome ? "Hành trình tiếp theo bắt đầu từ đây." : "Đăng nhập để khám phá ưu đãi"}
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-blue-100">
-                Nhập email để tiếp tục đăng nhập và nhận mã OTP xác thực từ SeeYAHH!.
+                {isHome ? "Đăng nhập để khám phá ưu đãi và lưu giữ những chuyến đi của bạn. Nhập email để nhận mã OTP xác thực." : "Nhập email để tiếp tục đăng nhập và nhận mã OTP xác thực từ SeeYAHH!."}
               </p>
             </div>
 
@@ -38,6 +39,7 @@ function Footer() {
             >
               <input
                 type="email"
+                aria-label="Email của bạn"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"

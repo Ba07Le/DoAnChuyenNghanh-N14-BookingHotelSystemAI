@@ -27,10 +27,10 @@ export default function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-white p-4 md:flex">
-        <Link to="/admin" className="mb-6 px-2 text-lg font-bold text-slate-900">HOTELAI <span className="text-blue-600">Admin</span></Link>
+        <Link to="/admin" className="mb-6 px-2 text-lg font-bold text-slate-900">SeeYAHH! <span className="text-[#087e83]">Admin</span></Link>
         <nav className="space-y-1">
           {items.map(({ to, label, icon: Icon, end, badge }) => (
-            <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50"}`}>
+            <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${isActive ? "bg-[#e8f5f3] text-[#06646a]" : "text-slate-600 hover:bg-slate-50"}`}>
               <Icon size={18} />{label}{badge && <Badge n={counts[badge]} />}
             </NavLink>
           ))}
@@ -44,7 +44,7 @@ export default function AdminLayout() {
         {/* Thanh điều hướng cho màn hình nhỏ */}
         <nav className="flex gap-1 overflow-x-auto border-b bg-white p-2 md:hidden">
           {items.map(({ to, label, end, badge }) => (
-            <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-600"}`}>
+            <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold ${isActive ? "bg-[#e8f5f3] text-[#06646a]" : "text-slate-600"}`}>
               {label}{badge && <Badge n={counts[badge]} />}
             </NavLink>
           ))}
@@ -54,7 +54,7 @@ export default function AdminLayout() {
           <div className="flex items-center gap-3">
             {pending > 0 && <Link to="/admin/hotels?status=PENDING_APPROVAL" className="hidden rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 sm:block">{pending} khách sạn chờ duyệt</Link>}
             <p className="hidden text-sm text-slate-500 sm:block">Xin chào, <b className="text-slate-900">{user?.fullName}</b></p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white" aria-hidden="true">{initial}</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#087e83] text-sm font-bold text-white" aria-hidden="true">{initial}</span>
           </div>
         </header>
         <main className="p-6"><Outlet /></main>

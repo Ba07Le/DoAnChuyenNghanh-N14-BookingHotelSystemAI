@@ -1,5 +1,11 @@
 import {
   Bell,
+  BellOff,
+  Search,
+  X,
+  ArrowUpRight,
+  RefreshCw,
+  AlertCircle,
   CalendarDays,
   CheckCheck,
   Clock3,
@@ -10,7 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   deleteNotification,
   getNotifications,
@@ -73,9 +79,8 @@ const setRead = (items, id, isRead) =>
 
 function Notifications() {
   const navigate = useNavigate();
-  const outlet = useOutletContext() || {};
-  const unreadCount = outlet.unreadCount ?? 0;
-  const setUnreadCount = outlet.setUnreadCount || (() => {});
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [query, setQuery] = useState("");
 
   const [filter, setFilter] = useState("all");
   const [items, setItems] = useState([]);
@@ -133,6 +138,7 @@ function Notifications() {
     setFilter(value);
     setLoading(true);
     setError("");
+    setQuery("");
     loadFirstPage(value === "unread");
   };
 
@@ -167,7 +173,9 @@ function Notifications() {
   };
 
   const handleOpen = async (notification) => {
+    if (working) return;
     if (!notification.isRead) {
+      setWorking(true);
       setItems((prev) => setRead(prev, notification._id, true));
 
       try {
@@ -180,11 +188,15 @@ function Notifications() {
           err.response?.data?.message || "Không thể đánh dấu thông báo đã đọc.",
         );
         return;
+      } finally {
+        setWorking(false);
       }
     }
 
     const link = getLink(notification);
 
+    if (filter === "unread")
+      setItems((prev) => prev.filter((item) => item._id !== notification._id));
     if (link) navigate(link);
   };
 
@@ -196,6 +208,7 @@ function Notifications() {
 
       if (typeof data.unreadCount === "number")
         setUnreadCount(data.unreadCount);
+      if (filter === "unread") setHasMore(false);
       setItems((prev) =>
         filter === "unread"
           ? []
@@ -230,140 +243,274 @@ function Notifications() {
     }
   };
 
-  return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Thông báo</h1>
+  const normalize = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d");
+  const visible = items.filter((item) =>
+    normalize(`${item.title} ${item.message}`).includes(
+      normalize(query.trim()),
+    ),
+  );
+  const labels = {
+    BOOKING_CONFIRMED: "Đặt phòng",
+    BOOKING_CANCELLED: "Đặt phòng",
+    PAYMENT_SUCCESS: "Thanh toán",
+    PAYMENT_FAILED: "Thanh toán",
+    CHECK_IN_REMINDER: "Lịch trình",
+    REVIEW_REMINDER: "Đánh giá",
+    PROMOTION: "Ưu đãi",
+    SYSTEM: "Hệ thống",
+  };
+  const groups = visible.reduce((acc, item) => {
+    const date = new Date(item.createdAt);
+    const now = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const key = Number.isNaN(date.getTime())
+      ? "Thông báo"
+      : date.toDateString() === now.toDateString()
+        ? "Hôm nay"
+        : date.toDateString() === yesterday.toDateString()
+          ? "Hôm qua"
+          : date.toLocaleDateString("vi-VN");
+    if (!acc.has(key)) acc.set(key, []);
+    acc.get(key).push(item);
+    return acc;
+  }, new Map());
 
+  return (
+    <section className="sy-inbox" aria-labelledby="sy-inbox-title">
+      <header className="sy-inbox-heading">
+        <div>
+          <p className="sy-inbox-kicker">YOUR TRAVEL UPDATES</p>
+          <h2 id="sy-inbox-title">Thông báo</h2>
+          <p>Cập nhật những thông tin quan trọng cho hành trình của bạn.</p>
+        </div>
         <button
+          type="button"
+          className="sy-inbox-secondary"
           onClick={handleMarkAllRead}
-          disabled={unreadCount === 0 || working}
-          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={unreadCount === 0 || working || loading || loadingMore}
         >
-          <CheckCheck size={16} />
-          Đánh dấu tất cả đã đọc
+          <CheckCheck size={18} /> Đánh dấu tất cả đã đọc
+        </button>
+      </header>
+      <div className="sy-inbox-summary">
+        <div className="sy-inbox-emblem">
+          <Bell size={29} />
+        </div>
+        <div>
+          <p>TRUNG TÂM THÔNG BÁO</p>
+          <strong>
+            {loading ? "Đang cập nhật…" : `${unreadCount} thông báo chưa đọc`}
+          </strong>
+          <span>
+            {unreadCount
+              ? "Bạn có cập nhật mới cần xem."
+              : "Theo dõi các cập nhật về chuyến đi của bạn."}
+          </span>
+        </div>
+        <Bell className="sy-inbox-decoration" size={140} aria-hidden="true" />
+      </div>
+      <div className="sy-inbox-toolbar">
+        <div className="sy-inbox-tabs" aria-label="Lọc thông báo">
+          {FILTERS.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              aria-pressed={filter === option.value}
+              disabled={loading || loadingMore || working}
+              onClick={() => handleFilterChange(option.value)}
+            >
+              {option.label}
+              {option.value === "unread" && <span>{unreadCount}</span>}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="sy-inbox-refresh"
+          aria-label="Tải lại thông báo"
+          title="Tải lại thông báo"
+          disabled={loading || loadingMore || working}
+          onClick={() => {
+            setLoading(true);
+            loadFirstPage(filter === "unread");
+          }}
+        >
+          <RefreshCw size={17} />
         </button>
       </div>
-
-      {/* Bộ lọc */}
-      <div className="mt-6 flex gap-2">
-        {FILTERS.map((option) => (
+      <div className="sy-inbox-search">
+        <Search size={19} />
+        <input
+          aria-label="Tìm trong thông báo đã tải"
+          placeholder="Tìm nội dung, mã đặt phòng..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query && (
           <button
-            key={option.value}
-            onClick={() => handleFilterChange(option.value)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              filter === option.value
-                ? "bg-slate-900 text-white"
-                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-            }`}
+            type="button"
+            aria-label="Xóa từ khóa"
+            onClick={() => setQuery("")}
           >
-            {option.label}
-            {option.value === "unread" &&
-              unreadCount > 0 &&
-              ` (${unreadCount})`}
+            <X size={17} />
           </button>
-        ))}
+        )}
       </div>
-
-      {/* Error */}
+      {query && (
+        <p className="sy-inbox-hint">
+          {visible.length} kết quả trong {items.length} thông báo đã tải.
+        </p>
+      )}
       {error && (
-        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
+        <div className="sy-inbox-error" role="alert">
+          <AlertCircle size={18} />
+          <span>{error}</span>
+          <button
+            type="button"
+            disabled={working || loading}
+            onClick={() => {
+              setLoading(true);
+              loadFirstPage(filter === "unread");
+            }}
+          >
+            Thử lại
+          </button>
         </div>
       )}
-
       {loading ? (
-        <div className="mt-6 space-y-3">
+        <div
+          className="sy-inbox-list"
+          aria-busy="true"
+          aria-label="Đang tải thông báo"
+        >
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />
+            <div key={i} className="sy-inbox-skeleton" />
           ))}
         </div>
       ) : (
-        <div className="mt-6 space-y-3">
-          {items.map((notification) => {
-            const { icon: Icon, className } =
-              TYPE_STYLES[notification.type] || TYPE_STYLES.SYSTEM;
-
-            return (
-              <article
-                key={notification._id}
-                className={`flex items-start gap-3 rounded-2xl border p-4 transition-colors ${
-                  notification.isRead
-                    ? "border-slate-200 bg-white"
-                    : "border-blue-100 bg-blue-50/40"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => handleOpen(notification)}
-                  className="flex min-w-0 flex-1 items-start gap-4 text-left"
-                >
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${className}`}
+        <div className="sy-inbox-list">
+          {Array.from(groups, ([date, entries]) => (
+            <section key={date} className="sy-inbox-group">
+              <h3>{date}</h3>
+              {entries.map((notification) => {
+                const { icon: Icon } =
+                  TYPE_STYLES[notification.type] || TYPE_STYLES.SYSTEM;
+                const tone = ["BOOKING_CANCELLED", "PAYMENT_FAILED"].includes(
+                  notification.type,
+                )
+                  ? "danger"
+                  : ["CHECK_IN_REMINDER", "REVIEW_REMINDER"].includes(
+                        notification.type,
+                      )
+                    ? "gold"
+                    : "teal";
+                return (
+                  <article
+                    key={notification._id}
+                    className={`sy-inbox-item ${notification.isRead ? "" : "sy-inbox-unread"}`}
                   >
-                    <Icon size={18} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <h2
-                        className={`text-slate-900 ${notification.isRead ? "font-medium" : "font-semibold"}`}
-                      >
-                        {notification.title}
-                      </h2>
-
-                      {!notification.isRead && (
-                        <span
-                          className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-600"
-                          aria-label="Chưa đọc"
-                        />
-                      )}
-                    </div>
-
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      {notification.message}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-400">
-                      {formatTimeAgo(notification.createdAt)}
-                    </p>
-                  </div>
-                </button>
-
+                    <button
+                      type="button"
+                      className="sy-inbox-open"
+                      disabled={working || loadingMore}
+                      onClick={() => handleOpen(notification)}
+                    >
+                      <span className={`sy-inbox-icon sy-inbox-${tone}`}>
+                        <Icon size={21} />
+                      </span>
+                      <span className="sy-inbox-body">
+                        <span className="sy-inbox-meta">
+                          <span>{labels[notification.type] || "Hệ thống"}</span>
+                          {!notification.isRead && (
+                            <span className="sy-inbox-new">Chưa đọc</span>
+                          )}
+                        </span>
+                        <strong>{notification.title}</strong>
+                        <span className="sy-inbox-message">
+                          {notification.message}
+                        </span>
+                        <span className="sy-inbox-time">
+                          <Clock3 size={13} />
+                          {formatTimeAgo(notification.createdAt)}
+                          {getLink(notification) && (
+                            <span className="sy-inbox-link">
+                              Xem chi tiết <ArrowUpRight size={13} />
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="sy-inbox-delete"
+                      title="Xóa thông báo"
+                      aria-label={`Xóa thông báo: ${notification.title}`}
+                      disabled={working || loadingMore}
+                      onClick={() => handleDelete(notification._id)}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </article>
+                );
+              })}
+            </section>
+          ))}
+          {!visible.length && !error && (
+            <div className="sy-inbox-empty">
+              <span>
+                {query ? <Search size={32} /> : <BellOff size={32} />}
+              </span>
+              <h3>
+                {query
+                  ? "Không tìm thấy thông báo phù hợp"
+                  : filter === "unread"
+                    ? "Bạn đã đọc hết thông báo"
+                    : "Chưa có thông báo"}
+              </h3>
+              <p>
+                {query
+                  ? "Thử từ khóa khác hoặc tải thêm thông báo."
+                  : "Các cập nhật mới về hành trình sẽ xuất hiện tại đây."}
+              </p>
+              {query ? (
                 <button
-                  type="button"
-                  onClick={() => handleDelete(notification._id)}
-                  aria-label="Xoá thông báo"
-                  disabled={working}
-                  className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-red-500"
+                  className="sy-inbox-secondary"
+                  onClick={() => setQuery("")}
                 >
-                  <Trash2 size={16} />
+                  Xóa từ khóa
                 </button>
-              </article>
-            );
-          })}
-
-          {!items.length && !error && (
-            <div className="rounded-2xl bg-white p-12 text-center text-slate-500">
-              {filter === "unread"
-                ? "Bạn đã đọc hết thông báo."
-                : "Chưa có thông báo."}
+              ) : (
+                filter === "unread" && (
+                  <button
+                    className="sy-inbox-secondary"
+                    onClick={() => handleFilterChange("all")}
+                  >
+                    Xem tất cả thông báo
+                  </button>
+                )
+              )}
             </div>
           )}
-
           {hasMore && (
-            <div className="pt-2 text-center">
+            <div className="sy-inbox-more">
               <button
+                className="sy-inbox-secondary"
                 onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+                disabled={loadingMore || working}
               >
-                {loadingMore ? "Đang tải..." : "Xem thêm"}
+                {loadingMore ? "Đang tải..." : "Xem thêm thông báo"}
               </button>
             </div>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

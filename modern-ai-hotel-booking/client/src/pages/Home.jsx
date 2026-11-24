@@ -10,6 +10,7 @@ import {
   HotelTypes,
   FeaturedDeals,
   WhyChooseUs,
+  TrustStrip,
 } from "../components/HomepageSections";
 
 import { getHomepageData } from "../api/homepageApi";
@@ -50,26 +51,29 @@ function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="sy-home-page min-h-screen">
       <Navbar />
 
-      <HeroSearch />
+      <main>
+      <HeroSearch destinations={homepageData.destinations} />
+      <TrustStrip />
 
       <PopularDestinations
         destinations={homepageData.destinations}
         isLoading={isLoading}
       />
 
+      <HotelTypes types={homepageData.hotelTypes} isLoading={isLoading} />
+
       <FeaturedHotels
         hotels={homepageData.featuredHotels}
         isLoading={isLoading}
       />
 
-      <HotelTypes types={homepageData.hotelTypes} isLoading={isLoading} />
-
       <FeaturedDeals deals={homepageData.deals} isLoading={isLoading} />
 
       <WhyChooseUs />
+      </main>
 
       <Footer />
     </div>

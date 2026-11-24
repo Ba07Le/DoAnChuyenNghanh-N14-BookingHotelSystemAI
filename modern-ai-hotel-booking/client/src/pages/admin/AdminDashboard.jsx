@@ -35,7 +35,7 @@ export default function AdminDashboard() {
         <div><h1 className="text-2xl font-bold text-slate-900">Tổng quan hệ thống</h1><p className="text-sm text-slate-500">So sánh với kỳ liền trước có cùng độ dài.</p></div>
         <div className="flex rounded-xl bg-white p-1 shadow-sm">
           {RANGES.map((r) => (
-            <button key={r.days} onClick={() => setDays(r.days)} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${days === r.days ? "bg-blue-600 text-white" : "text-slate-600"}`}>{r.label}</button>
+            <button key={r.days} onClick={() => setDays(r.days)} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${days === r.days ? "bg-[#087e83] text-white" : "text-slate-600"}`}>{r.label}</button>
           ))}
         </div>
       </div>
@@ -61,18 +61,18 @@ export default function AdminDashboard() {
             <div className="h-72">
               <ResponsiveContainer>
                 <AreaChart data={revenue.data?.data}>
-                  <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#2563eb" stopOpacity={0.25} /><stop offset="95%" stopColor="#2563eb" stopOpacity={0} /></linearGradient></defs>
+                  <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#087e83" stopOpacity={0.25} /><stop offset="95%" stopColor="#087e83" stopOpacity={0} /></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => (d.length === 7 ? d : d.slice(5))} minTickGap={24} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={shortMoney} width={50} />
                   <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
                     <div className="rounded-lg border bg-white p-2 text-xs shadow">
                       <p className="font-semibold text-slate-900">{label}</p>
-                      <p className="text-blue-600">Doanh thu: {money(payload[0].payload.revenue)}</p>
+                      <p className="text-[#087e83]">Doanh thu: {money(payload[0].payload.revenue)}</p>
                       <p className="text-slate-500">{payload[0].payload.bookings} booking đã thanh toán</p>
                     </div>
                   ) : null} />
-                  <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#rev)" />
+                  <Area type="monotone" dataKey="revenue" stroke="#087e83" strokeWidth={2} fill="url(#rev)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
             <ol className="divide-y">
               {topHotels.data?.data?.map((h, i) => (
                 <li key={h.hotelId} className="flex items-center gap-3 py-3 text-sm">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-600">{i + 1}</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f5f3] font-bold text-[#087e83]">{i + 1}</span>
                   <div className="min-w-0 flex-1"><p className="truncate font-semibold">{h.name}</p><p className="text-xs text-slate-400">{h.city} · {h.bookings} booking</p></div>
                   <b>{money(h.revenue)}</b>
                 </li>

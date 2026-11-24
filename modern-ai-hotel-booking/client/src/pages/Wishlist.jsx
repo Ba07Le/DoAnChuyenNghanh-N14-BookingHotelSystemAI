@@ -1,7 +1,19 @@
-import { Heart, MapPin, RefreshCw } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  RefreshCw,
+  Search,
+  X,
+  ArrowUpRight,
+  Building2,
+  Star,
+  Compass,
+  LoaderCircle,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { getImageUrl } from "../utils/imageUrl";
 import { getWishlist } from "../api/wishlistApi";
 import { useWishlist } from "../context/WishlistContext";
 
@@ -23,6 +35,7 @@ const normalizeWishlistItem = (item) => {
     id: item.id || item._id || hotelId,
     hotelId: String(hotelId),
     hotel,
+    savedAt: item.savedAt,
   };
 };
 
@@ -32,6 +45,9 @@ const getErrorMessage = (error, fallback) =>
 function Wishlist() {
   const { setLike } = useWishlist();
 
+  const [query, setQuery] = useState("");
+  const [city, setCity] = useState("");
+  const [sort, setSort] = useState("recent");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState(null);
@@ -79,6 +95,16 @@ function Wishlist() {
       const removed = await setLike(hotelId, false);
 
       if (removed) {
+        if (
+          city &&
+          items.filter((item) => item.hotel.address?.city === city).length ===
+            1 &&
+          items.some(
+            (item) =>
+              item.hotelId === hotelId && item.hotel.address?.city === city,
+          )
+        )
+          setCity("");
         setItems((previous) =>
           previous.filter((item) => item.hotelId !== hotelId),
         );
@@ -92,165 +118,260 @@ function Wishlist() {
     }
   };
 
+  const normalize = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d");
+  const cities = [
+    ...new Set(items.map(({ hotel }) => hotel.address?.city).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "vi"));
+  const visible = items.filter(
+    ({ hotel }) =>
+      (!city || hotel.address?.city === city) &&
+      normalize(`${hotel.name || ""} ${hotel.address?.city || ""}`).includes(
+        normalize(query.trim()),
+      ),
+  );
+  if (sort === "name")
+    visible.sort((a, b) =>
+      (a.hotel.name || "").localeCompare(b.hotel.name || "", "vi"),
+    );
+  if (sort === "rating")
+    visible.sort(
+      (a, b) =>
+        (Number(b.hotel.averageRating) || 0) -
+        (Number(a.hotel.averageRating) || 0),
+    );
+  const reset = () => {
+    setQuery("");
+    setCity("");
+    setSort("recent");
+  };
+
   return (
-    <div>
-      {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Danh sách yêu thích</h1>
-
-        <p className="mt-2 text-sm text-slate-500">
-          Những nơi lưu trú bạn đang quan tâm.
-        </p>
-      </div>
-
-      {/* THÔNG BÁO LỖI */}
+    <section className="sy-wish-page" aria-labelledby="wish-title">
+      <header className="sy-wish-heading">
+        <div>
+          <p className="sy-wish-kicker">YOUR PERSONAL COLLECTION</p>
+          <h1 id="wish-title">Danh sách yêu thích</h1>
+          <p>Lưu giữ những nơi bạn muốn đến, cho hành trình của riêng mình.</p>
+        </div>
+        <Link to="/hotels" className="sy-wish-primary">
+          Khám phá khách sạn <ArrowUpRight size={17} />
+        </Link>
+      </header>
+      {!loading && !error && (
+        <div className="sy-wish-summary">
+          <div className="sy-wish-summary-icon">
+            <Heart size={25} />
+          </div>
+          <div>
+            <p>BỘ SƯU TẬP CỦA BẠN</p>
+            <strong>{items.length} nơi lưu trú đã lưu</strong>
+            <span>{cities.length} điểm đến trong danh sách</span>
+          </div>
+          <Compass className="sy-wish-decor" size={92} aria-hidden="true" />
+        </div>
+      )}
       {error && (
-        <div
-          role="alert"
-          className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
-        >
+        <div className="sy-wish-error" role="alert">
           <span>{error}</span>
-
-          <button
-            type="button"
-            onClick={loadWishlist}
-            disabled={loading}
-            className="inline-flex items-center gap-2 font-semibold text-red-700 hover:text-red-800 disabled:opacity-50"
-          >
-            <RefreshCw size={15} />
-            Thử lại
+          <button type="button" onClick={loadWishlist} disabled={loading}>
+            <RefreshCw size={15} /> Thử lại
           </button>
         </div>
       )}
-
-      {/* LOADING SKELETON */}
       {loading ? (
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="overflow-hidden rounded-2xl bg-white shadow-sm"
-            >
-              <div className="h-48 animate-pulse bg-slate-200" />
-
-              <div className="space-y-4 p-5">
-                <div className="h-5 w-3/4 animate-pulse rounded bg-slate-200" />
-                <div className="h-4 w-1/2 animate-pulse rounded bg-slate-100" />
-                <div className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
-              </div>
-            </div>
+        <div
+          className="sy-wish-grid"
+          role="status"
+          aria-label="Đang tải danh sách yêu thích"
+        >
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="sy-wish-skeleton" />
           ))}
         </div>
       ) : (
         <>
-          {/* DANH SÁCH KHÁCH SẠN */}
           {items.length > 0 && (
-            <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {items.map(({ id, hotelId, hotel }) => {
-                const isRemoving = removingId === hotelId;
-
-                const imageUrl =
-                  hotel.images?.[0]?.url || hotel.images?.[0] || "";
-
-                return (
-                  <article
-                    key={id}
-                    className="sy-card overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    {/* ẢNH KHÁCH SẠN */}
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={hotel.name || "Khách sạn"}
-                        className="h-48 w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-48 items-center justify-center bg-slate-100 text-sm text-slate-400">
-                        Chưa có hình ảnh
-                      </div>
-                    )}
-
-                    {/* THÔNG TIN KHÁCH SẠN */}
-                    <div className="p-5">
-                      <h2 className="line-clamp-2 font-bold text-slate-900">
-                        {hotel.name || "Khách sạn"}
-                      </h2>
-
-                      <p className="mt-2 flex items-center gap-1 text-sm text-slate-500">
-                        <MapPin size={15} className="shrink-0" />
-
-                        <span>
-                          {hotel.address?.city || "Chưa cập nhật địa điểm"}
-                        </span>
-                      </p>
-
-                      {/* HÀNH ĐỘNG */}
-                      <div className="mt-5 flex items-center justify-between">
-                        {hotel.slug ? (
-                          <Link
-                            to={`/hotels/${hotel.slug}`}
-                            className="text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700"
-                          >
-                            Xem chi tiết
-                          </Link>
-                        ) : (
-                          <span className="text-sm text-slate-400">
-                            Chưa có liên kết
+            <>
+              <div className="sy-wish-toolbar">
+                <label className="sy-wish-search">
+                  <Search size={18} />
+                  <input
+                    aria-label="Tìm khách sạn yêu thích"
+                    placeholder="Tìm tên khách sạn, điểm đến..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      aria-label="Xóa từ khóa"
+                      onClick={() => setQuery("")}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </label>
+                <div className="sy-wish-selects">
+                  <label>
+                    <span>Điểm đến</span>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    >
+                      <option value="">Tất cả</option>
+                      {cities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Sắp xếp</span>
+                    <select
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value)}
+                    >
+                      <option value="recent">Mới lưu</option>
+                      <option value="name">Tên A–Z</option>
+                      <option value="rating">Đánh giá cao</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <p className="sy-wish-count" aria-live="polite">
+                {visible.length}/{items.length} nơi lưu trú
+              </p>
+              <div className="sy-wish-grid">
+                {visible.map(({ id, hotelId, hotel, savedAt }) => {
+                  const image = getImageUrl(
+                    hotel.images?.[0]?.url || hotel.images?.[0] || "",
+                  );
+                  const removing = removingId === hotelId;
+                  const date =
+                    savedAt && !Number.isNaN(new Date(savedAt).getTime())
+                      ? new Date(savedAt).toLocaleDateString("vi-VN")
+                      : "";
+                  return (
+                    <article key={id} className="sy-wish-card">
+                      <div className="sy-wish-photo">
+                        <Building2 size={36} aria-hidden="true" />
+                        {image && (
+                          <img
+                            src={image}
+                            alt={hotel.name || "Khách sạn"}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        )}
+                        {Number(hotel.starRating) > 0 && (
+                          <span className="sy-wish-stars">
+                            <Star size={13} fill="currentColor" />{" "}
+                            {hotel.starRating} sao
                           </span>
                         )}
-
                         <button
                           type="button"
+                          className="sy-wish-heart"
                           onClick={() => handleRemove(hotelId)}
                           disabled={Boolean(removingId)}
-                          aria-label={`Bỏ ${hotel.name || "khách sạn"} khỏi wishlist`}
+                          aria-label={`Bỏ ${hotel.name || "khách sạn"} khỏi danh sách yêu thích`}
                           title="Bỏ khỏi danh sách yêu thích"
-                          className="rounded-full p-2 text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Heart
-                            size={19}
-                            className={
-                              isRemoving
-                                ? "animate-pulse fill-red-300"
-                                : "fill-red-500"
-                            }
-                          />
+                          {removing ? (
+                            <LoaderCircle size={20} className="sy-wish-spin" />
+                          ) : (
+                            <Heart size={20} fill="currentColor" />
+                          )}
                         </button>
                       </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-
-          {/* DANH SÁCH TRỐNG */}
-          {items.length === 0 && !error && (
-            <div className="mt-10 rounded-2xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-                <Heart size={30} className="text-red-400" />
+                      <div className="sy-wish-body">
+                        <p className="sy-wish-location">
+                          <MapPin size={15} />{" "}
+                          {hotel.address?.city || "Chưa cập nhật địa điểm"}
+                        </p>
+                        <h2>{hotel.name || "Khách sạn"}</h2>
+                        <p className="sy-wish-rating">
+                          {Number(hotel.reviewCount) > 0 ? (
+                            <>
+                              <Star size={15} fill="currentColor" />
+                              <strong>
+                                {Number(hotel.averageRating || 0).toFixed(1)}
+                              </strong>{" "}
+                              · {hotel.reviewCount} đánh giá
+                            </>
+                          ) : (
+                            "Chưa có đánh giá"
+                          )}
+                        </p>
+                        <div className="sy-wish-bottom">
+                          <span>
+                            {date ? `Đã lưu ${date}` : "Đã lưu yêu thích"}
+                          </span>
+                          {hotel.slug ? (
+                            <Link
+                              to={`/hotels/${hotel.slug}`}
+                              className="sy-wish-link"
+                            >
+                              Xem chi tiết <ArrowUpRight size={16} />
+                            </Link>
+                          ) : (
+                            <span>Chưa có liên kết</span>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-
-              <h2 className="mt-5 text-lg font-semibold text-slate-900">
-                Danh sách yêu thích đang trống
-              </h2>
-
-              <p className="mt-2 text-sm text-slate-500">
-                Hãy khám phá và lưu lại những khách sạn bạn yêu thích.
+              {!visible.length && (
+                <div className="sy-wish-empty">
+                  <span>
+                    <Search size={30} />
+                  </span>
+                  <h2>Không tìm thấy nơi lưu trú phù hợp</h2>
+                  <p>Thử từ khóa hoặc điểm đến khác.</p>
+                  <button
+                    type="button"
+                    className="sy-wish-primary"
+                    onClick={reset}
+                  >
+                    Xóa bộ lọc
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          {!items.length && !error && (
+            <div className="sy-wish-empty sy-wish-empty-main">
+              <div className="sy-wish-empty-art" aria-hidden="true">
+                <Compass size={96} />
+                <Heart size={40} />
+              </div>
+              <p className="sy-wish-kicker">MAKE YOUR NEXT ESCAPE</p>
+              <h2>Những hành trình đẹp bắt đầu từ một nơi yêu thích.</h2>
+              <p>
+                Danh sách của bạn đang trống. Nhấn biểu tượng trái tim khi khám
+                phá khách sạn để lưu lại những nơi bạn muốn đến.
               </p>
-
-              <Link
-                to="/hotels"
-                className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-              >
-                Khám phá khách sạn
+              <Link to="/hotels" className="sy-wish-primary">
+                Khám phá khách sạn <ArrowUpRight size={17} />
+              </Link>
+              <Link to="/destinations" className="sy-wish-link">
+                Tìm cảm hứng du lịch <ArrowUpRight size={15} />
               </Link>
             </div>
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
 

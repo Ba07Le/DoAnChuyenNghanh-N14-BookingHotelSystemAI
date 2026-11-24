@@ -72,7 +72,7 @@ export default function AdminBookings() {
               <tbody className="divide-y">
                 {query.data?.data?.map((b) => (
                   <tr key={b._id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-semibold text-blue-600"><button onClick={() => setDetailId(b._id)}>{b.bookingCode}</button></td>
+                    <td className="px-4 py-3 font-semibold text-[#087e83]"><button onClick={() => setDetailId(b._id)}>{b.bookingCode}</button></td>
                     <td className="px-4 py-3"><p>{b.userId?.fullName || b.guestInfo?.fullName}</p><p className="text-xs text-slate-400">{b.userId?.email}</p></td>
                     <td className="px-4 py-3">{b.hotelId?.name}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-500">{fmtDate(b.checkIn)} → {fmtDate(b.checkOut)}</td>

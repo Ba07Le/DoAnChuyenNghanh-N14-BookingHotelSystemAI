@@ -8,6 +8,7 @@ import {
   Bell,
   CalendarDays,
   LogOut,
+  Star,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -18,13 +19,22 @@ function Navbar() {
   const [openProfile, setOpenProfile] = useState(false);
   const profileRef = useRef(null);
   const { pathname } = useLocation();
-  useEffect(() => { setOpenProfile(false); }, [pathname]);
   useEffect(() => {
-    const close = (event) => { if (!profileRef.current?.contains(event.target)) setOpenProfile(false); };
-    const key = (event) => { if (event.key === "Escape") setOpenProfile(false); };
+    setOpenProfile(false);
+  }, [pathname]);
+  useEffect(() => {
+    const close = (event) => {
+      if (!profileRef.current?.contains(event.target)) setOpenProfile(false);
+    };
+    const key = (event) => {
+      if (event.key === "Escape") setOpenProfile(false);
+    };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", key); };
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", key);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -42,7 +52,7 @@ function Navbar() {
 
   return (
     <>
-      <header className="sy-navbar sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sy-navbar sy-premium-nav sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           {/* Logo */}
           <div className="flex items-center">
@@ -50,7 +60,8 @@ function Navbar() {
               to="/"
               className="sy-brand text-2xl font-extrabold tracking-tight text-blue-600"
             >
-              <span className="sy-brand-mark">S</span> See<span className="text-slate-900">YAHH!</span>
+              <span className="sy-brand-mark">S</span> See
+              <span className="text-slate-900">YAHH!</span>
             </Link>
           </div>
 
@@ -219,6 +230,19 @@ function Navbar() {
                         Thông báo
                       </button>
 
+                      {/* My Reviews */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenProfile(false);
+                          navigate("/my-reviews");
+                        }}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <Star size={18} />
+                        Đánh giá của tôi
+                      </button>
+
                       {/* Dashboard */}
                       {(user?.role === "ADMIN" ||
                         user?.role === "HOTEL_OWNER") && (
@@ -226,7 +250,9 @@ function Navbar() {
                           type="button"
                           onClick={() => {
                             setOpenProfile(false);
-                            navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard"); // [ADMIN] admin vào trang quản trị riêng
+                            navigate(
+                              user?.role === "ADMIN" ? "/admin" : "/dashboard",
+                            ); // [ADMIN] admin vào trang quản trị riêng
                           }}
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
                         >
@@ -234,7 +260,6 @@ function Navbar() {
                           {user?.role === "ADMIN" ? "Quản trị" : "Dashboard"}
                         </button>
                       )}
-
                     </div>
 
                     {/* Logout */}
@@ -254,7 +279,16 @@ function Navbar() {
             )}
           </div>
         </div>
-        <nav aria-label="Điều hướng di động" className="sy-mobile-nav md:hidden">{navItems.map(item => <NavLink end={item.path === "/"} key={item.path} to={item.path}>{item.name}</NavLink>)}</nav>
+        <nav
+          aria-label="Điều hướng di động"
+          className="sy-mobile-nav md:hidden"
+        >
+          {navItems.map((item) => (
+            <NavLink end={item.path === "/"} key={item.path} to={item.path}>
+              {item.name}
+            </NavLink>
+          ))}
+        </nav>
       </header>
     </>
   );
